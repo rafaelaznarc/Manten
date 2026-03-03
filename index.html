@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manten. — Sistema de Activos</title>
 <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg:#f5f5f7; --surface:#fff; --surface2:#f5f5f7;
@@ -798,6 +799,17 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});});
 
 render();
+</script>
+  <script>
+    // Configuración de tu base de datos
+    const SUPABASE_URL = 'https://bhrnqtbpcrtlvwsqkkqb.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_4rCKHQPgXm8NDWFJIai2WA_Tp5R6s14';
+    
+    // Crear el cliente de conexión
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Mensaje de prueba en la consola
+    console.log("Conexión con Supabase configurada!");
 </script>
 </body>
 </html>
