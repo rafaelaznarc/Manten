@@ -663,17 +663,16 @@ async function saveAsset() {
 
   if(!name || !type){ toast('⚠ Nombre y Tipo son obligatorios'); return; }
 
-  // 1. Preparamos el objeto con los nombres de tus columnas en Supabase
+  // ESTA ES LA PARTE CLAVE: Los nombres deben ser IGUALES a Supabase
   const assetData = {
     id: id,
     nombre: name,
     categoria: type,
-    proximo_mantenimiento: document.getElementById('f-km-date').value || today(),
-    notas: document.getElementById('f-notes').value
+    fecha_compra: today(), // O el ID del campo de fecha si lo tienes
+    proximo_mantenimiento: document.getElementById('f-km-date').value || today()
   };
 
   try {
-    // 2. Intentamos guardar en Supabase (upsert inserta si es nuevo o actualiza si existe)
     const { data, error } = await supabaseClient
       .from('activos')
       .upsert([assetData])
@@ -681,20 +680,20 @@ async function saveAsset() {
 
     if (error) throw error;
 
-    // 3. Si todo sale bien en la nube, actualizamos la lista local
+    // Actualizamos la lista local con lo que nos devuelve la nube
     const index = db.assets.findIndex(a => a.id === id);
     if(index > -1) db.assets[index] = data[0];
     else db.assets.push(data[0]);
 
     sel = id;
-    save(); // Sigue guardando en localStorage como respaldo
+    save(); 
     closeModal('modal-asset');
     render();
     toast('✅ ¡Sincronizado con Supabase!');
     
   } catch (error) {
-    console.error("Error al sincronizar:", error);
-    toast('❌ Error al guardar en la nube');
+    console.error("Error real:", error);
+    toast('❌ Error: ' + error.message);
   }
 }
 function deleteAsset(){
