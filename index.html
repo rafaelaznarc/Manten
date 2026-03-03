@@ -831,16 +831,21 @@ document.querySelectorAll('.overlay').forEach(o=>{o.addEventListener('click',e=>
 render();
 </script>
   <script>
-  // Solo configuramos el puente, no tocamos nada de tu código original todavía
   const URL_SB = 'https://bhrnqtbpcrtlvwsqkkqb.supabase.co';
-  const KEY_SB = 'sb_publishable_4rCKHQPgXm8NDWFJIai2WA_Tp5R6s14'; // Pon la key larga aquí
+  const KEY_SB = 'sb_publishable_4rCKHQPgXm8NDWFJIai2WA_Tp5R6s14'; 
+  const supabaseClient = supabase.createClient(URL_SB, KEY_SB);
 
-  try {
-    const supabaseClient = supabase.createClient(URL_SB, KEY_SB);
-    console.log("🚀 El puente con Supabase está listo y esperando.");
-  } catch (error) {
-    console.log("❌ Error al crear el puente:", error);
+  async function cargarDatosIniciales() {
+    const { data, error } = await supabaseClient.from('activos').select('*');
+    if (!error && data.length > 0) {
+      db.assets = data;
+      if(!sel) sel = data[0].id;
+      render();
+      console.log("🚀 Datos cargados desde la nube");
+    }
   }
+
+  document.addEventListener('DOMContentLoaded', cargarDatosIniciales);
 </script>
 </body>
 </html>
