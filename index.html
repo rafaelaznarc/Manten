@@ -656,16 +656,46 @@ function openAssetModal(editId){
 }
 function clearAF(){['f-id','f-name','f-model','f-year','f-plate','f-loc','f-km','f-km-date','f-notes'].forEach(i=>document.getElementById(i).value='');document.getElementById('f-type').value='';onTypeChange();}
 function onTypeChange(){const t=document.getElementById('f-type').value;document.getElementById('c-plate').classList.toggle('show',t==='car');document.getElementById('c-loc').classList.toggle('show',t==='ac'||t==='water');document.getElementById('c-km').classList.toggle('show',t==='car');}
-function saveAsset(){
-  const name=document.getElementById('f-name').value.trim();
-  const type=document.getElementById('f-type').value;
-  if(!name){toast('⚠ El nombre es obligatorio');return;}
-  if(!type){toast('⚠ Selecciona el tipo de activo');return;}
-  const editId=document.getElementById('f-id').value;
-  const asset={id:editId||uid(),name,type,model:document.getElementById('f-model').value.trim(),year:document.getElementById('f-year').value,plate:document.getElementById('f-plate').value.trim().toUpperCase(),loc:document.getElementById('f-loc').value.trim(),km:parseFloat(document.getElementById('f-km').value)||null,kmDate:document.getElementById('f-km-date').value,notes:document.getElementById('f-notes').value.trim(),createdAt:editId?(db.assets.find(a=>a.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString()};
-  if(editId){const i=db.assets.findIndex(a=>a.id===editId);if(i>-1)db.assets[i]=asset;toast('✓ Activo actualizado');}
-  else{db.assets.push(asset);sel=asset.id;toast('✓ Activo agregado');}
-  save();closeModal('modal-asset');render();
+async function saveAsset() {
+  const id = document.getElementById('f-id').value || uid();
+  const name = document.getElementById('f-name').value;
+  const type = document.getElementById('f-type').value;
+
+  if(!name || !type){ toast('⚠ Nombre y Tipo son obligatorios'); return; }
+
+  // 1. Preparamos el objeto con los nombres de tus columnas en Supabase
+  const assetData = {
+    id: id,
+    nombre: name,
+    categoria: type,
+    proximo_mantenimiento: document.getElementById('f-km-date').value || today(),
+    notas: document.getElementById('f-notes').value
+  };
+
+  try {
+    // 2. Intentamos guardar en Supabase (upsert inserta si es nuevo o actualiza si existe)
+    const { data, error } = await supabaseClient
+      .from('activos')
+      .upsert([assetData])
+      .select();
+
+    if (error) throw error;
+
+    // 3. Si todo sale bien en la nube, actualizamos la lista local
+    const index = db.assets.findIndex(a => a.id === id);
+    if(index > -1) db.assets[index] = data[0];
+    else db.assets.push(data[0]);
+
+    sel = id;
+    save(); // Sigue guardando en localStorage como respaldo
+    closeModal('modal-asset');
+    render();
+    toast('✅ ¡Sincronizado con Supabase!');
+    
+  } catch (error) {
+    console.error("Error al sincronizar:", error);
+    toast('❌ Error al guardar en la nube');
+  }
 }
 function deleteAsset(){
   const editId=document.getElementById('f-id').value;if(!editId)return;
