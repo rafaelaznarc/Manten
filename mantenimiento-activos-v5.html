@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manten. — Sistema de Activos</title>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f5f5f7; --surface:#fff; --surface2:#f5f5f7;
+    --border:#d2d2d7; --border-lt:#e8e8ed;
+    --accent:#0071e3; --accent-hov:#0077ed;
+    --text:#1d1d1f; --text-2:#424245; --text-3:#6e6e73; --text-4:#a1a1a6;
+    --red:#ff3b30; --orange:#ff9500; --green:#34c759;
+    --font:'Raleway',-apple-system,sans-serif;
+    --r:12px; --rs:8px;
+    --s1:0 2px 12px rgba(0,0,0,.08);
+    --s2:0 4px 24px rgba(0,0,0,.12);
+    --s3:0 12px 48px rgba(0,0,0,.16);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+
+  /* NAV */
+  .navbar{background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--border-lt);position:sticky;top:0;z-index:200}
+  .nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;height:52px;display:flex;align-items:center;gap:14px}
+  .nav-logo{font-size:17px;font-weight:700;color:var(--text);letter-spacing:-.3px;flex-shrink:0}
+  .nav-logo span{color:var(--accent)}
+  .nav-div{width:1px;height:18px;background:var(--border);flex-shrink:0}
+  .nav-sub{font-size:13px;color:var(--text-3);flex:1}
+  .nav-pills{display:flex;align-items:center;gap:6px}
+  .pill{display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+  .pill .d{width:6px;height:6px;border-radius:50%}
+  .pill .n{font-size:13px;font-weight:700}
+  .p-red{background:#fff2f1;color:var(--red)} .p-red .d{background:var(--red)}
+  .p-ora{background:#fff8f0;color:var(--orange)} .p-ora .d{background:var(--orange)}
+  .p-grn{background:#f0fff4;color:#1a7f3c} .p-grn .d{background:var(--green);animation:br 2.5s ease-in-out infinite}
+  @keyframes br{0%,100%{opacity:1}50%{opacity:.4}}
+  .nav-acts{display:flex;gap:8px;flex-shrink:0}
+
+  /* BUTTONS */
+  .btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:980px;cursor:pointer;font-family:var(--font);font-weight:600;transition:all .15s;white-space:nowrap}
+  .btn-blue{background:var(--accent);color:#fff;padding:7px 16px;font-size:13px}
+  .btn-blue:hover{background:var(--accent-hov)}
+  .btn-gray{background:#e8e8ed;color:var(--text-2);padding:7px 16px;font-size:13px}
+  .btn-gray:hover{background:#dddde2}
+  .btn-sm{padding:5px 14px;font-size:12px}
+  .btn-ghost{background:transparent;color:var(--accent);padding:5px 0;font-size:13px;font-weight:600;border:none;cursor:pointer;font-family:var(--font);transition:opacity .15s}
+  .btn-ghost:hover{opacity:.7}
+  .btn-del{background:transparent;color:var(--red);border:1.5px solid var(--red);border-radius:980px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s}
+  .btn-del:hover{background:var(--red);color:#fff}
+  .ico-btn{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border-lt);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:background .15s;color:var(--text-3);flex-shrink:0}
+  .ico-btn:hover{background:var(--border-lt)}
+
+  /* LAYOUT */
+  .sum-wrap{max-width:1200px;margin:0 auto;padding:24px 24px 0}
+  .sum-strip{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--border-lt);border-radius:var(--r);overflow:hidden;box-shadow:var(--s1)}
+  .sc{padding:20px 24px;border-right:1px solid var(--border-lt)}
+  .sc:last-child{border-right:none}
+  .sl{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text-3);text-transform:uppercase;margin-bottom:6px}
+  .sv{font-size:32px;font-weight:700;letter-spacing:-1px;color:var(--text);line-height:1}
+  .sv.blue{color:var(--accent)} .sv.red{color:var(--red)} .sv.ora{color:var(--orange)}
+  .ss{font-size:12px;color:var(--text-3);margin-top:4px}
+
+  .page{max-width:1200px;margin:0 auto;padding:24px 24px 64px;display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:start}
+
+  /* SIDEBAR */
+  .sidebar{background:var(--surface);border:1px solid var(--border-lt);border-radius:var(--r);box-shadow:var(--s1);overflow:hidden;position:sticky;top:76px}
+  .sb-sec{padding:14px 12px 8px}
+  .sb-sec+.sb-sec{border-top:1px solid var(--border-lt)}
+  .sb-lbl{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text-3);text-transform:uppercase;padding:0 8px;margin-bottom:4px}
+  .sb-list{display:flex;flex-direction:column;gap:2px;padding-bottom:4px}
+  .abt{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--rs);border:none;background:transparent;width:100%;text-align:left;cursor:pointer;transition:background .12s}
+  .abt:hover{background:var(--surface2)}
+  .abt.active{background:#e8f0fd}
+  .abt.active .abn{color:var(--accent);font-weight:700}
+  .ab-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .ic-car{background:#e8f0fd} .ic-ac{background:#e8f9f0} .ic-wtr{background:#e8f4fd}
+  .ab-inf{flex:1;min-width:0}
+  .abn{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+  .abs{font-size:11px;color:var(--text-3);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  .sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .d-ok{background:var(--green)} .d-warn{background:var(--orange)} .d-due{background:var(--red);animation:bl 1.5s infinite}
+  @keyframes bl{0%,100%{opacity:1}50%{opacity:.4}}
+  .sb-foot{border-top:1px solid var(--border-lt);padding:12px}
+  .sb-add{width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:var(--rs);background:transparent;border:1.5px dashed var(--border);color:var(--text-3);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .sb-add:hover{border-color:var(--accent);color:var(--accent);background:#f0f5ff}
+
+  /* CONTENT */
+  .content{display:flex;flex-direction:column;gap:16px}
+  .content>*{animation:fu .25s ease both}
+  .content>*:nth-child(1){animation-delay:.03s}
+  .content>*:nth-child(2){animation-delay:.07s}
+  .content>*:nth-child(3){animation-delay:.11s}
+  .content>*:nth-child(4){animation-delay:.15s}
+  .content>*:nth-child(5){animation-delay:.19s}
+  @keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  /* CARD */
+  .card{background:var(--surface);border:1px solid var(--border-lt);border-radius:var(--r);box-shadow:var(--s1);overflow:hidden}
+  .card-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border-lt)}
+  .card-ttl{font-size:13px;font-weight:700;color:var(--text-2);letter-spacing:.3px;text-transform:uppercase}
+
+  /* HERO */
+  .hero{position:relative;overflow:hidden}
+  .hero-bg{position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:88px;opacity:.06;pointer-events:none;user-select:none}
+  .hero-in{padding:24px}
+  .hero-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+  .hero-name{font-size:28px;font-weight:700;letter-spacing:-.5px}
+  .hero-sub{font-size:13px;color:var(--text-3);margin-top:3px}
+  .hero-r{display:flex;align-items:center;gap:10px}
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:980px;font-size:11px;font-weight:700}
+  .b-ok{background:#f0fff4;color:#1a7f3c} .b-warn{background:#fff8f0;color:#a05c00} .b-due{background:#fff2f1;color:#c0392b}
+  .hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .stat{background:var(--surface2);border-radius:var(--rs);padding:14px 16px;border:1px solid var(--border-lt)}
+  .stat-lbl{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+  .stat-val{font-size:22px;font-weight:700;letter-spacing:-.5px}
+  .stat-val span{font-size:12px;font-weight:500;color:var(--text-3);margin-left:2px;letter-spacing:0}
+  .sbar{height:3px;background:var(--border-lt);border-radius:99px;margin-top:10px;overflow:hidden}
+  .sbf{height:100%;border-radius:99px;background:var(--accent);transition:width .6s ease}
+  .s-ok{background:var(--green)} .s-warn{background:var(--orange)} .s-due{background:var(--red)}
+
+  /* TABLE */
+  .tbl-h{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1.2fr 90px;padding:10px 20px;background:var(--surface2);border-bottom:1px solid var(--border-lt)}
+  .th{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px}
+  .tbl-r{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1.2fr 90px;padding:14px 20px;border-bottom:1px solid var(--border-lt);align-items:center;transition:background .1s}
+  .tbl-r:last-child{border-bottom:none}
+  .tbl-r:hover{background:var(--surface2)}
+  .rname{font-size:14px;font-weight:600}
+  .ttag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:980px;font-size:10px;font-weight:700;margin-top:4px;letter-spacing:.3px}
+  .t-km{background:#e8f0fd;color:#0051a8} .t-time{background:#fff8e6;color:#8a5c00} .t-both{background:#f0fff4;color:#1a6e33}
+  .td{font-size:12px;color:var(--text-3)}
+  .td.hi{color:var(--text);font-weight:600}
+  .td.warn{color:var(--orange);font-weight:600}
+  .td.alert{color:var(--red);font-weight:700}
+  .td.ok{color:var(--green);font-weight:600}
+  .mw{display:flex;align-items:center;gap:8px}
+  .mb{flex:1;height:4px;background:var(--border-lt);border-radius:99px;overflow:hidden}
+  .mf{height:100%;border-radius:99px;transition:width .5s ease}
+  .f-ok{background:var(--green)} .f-warn{background:var(--orange)} .f-due{background:var(--red)}
+  .pct{font-size:10px;font-weight:700;min-width:28px;text-align:right}
+  .btn-log{padding:5px 14px;background:transparent;border:1.5px solid var(--border);border-radius:980px;color:var(--text-3);font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
+  .btn-log:hover{border-color:var(--accent);color:var(--accent);background:#f0f5ff}
+  .btn-log.urg{border-color:var(--red);color:var(--red)}
+  .btn-log.urg:hover{background:#fff2f1}
+
+  /* BOTTOM */
+  .bg2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+  /* ODO */
+  .odo-in{padding:18px 20px}
+  .odo-disp{display:flex;gap:3px;margin:12px 0 10px;align-items:flex-end}
+  .odo-d{background:var(--surface2);border:1px solid var(--border-lt);border-radius:6px;width:34px;height:46px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:var(--accent)}
+  .odo-sep{font-size:18px;color:var(--text-4);margin-bottom:8px}
+  .odo-unit{font-size:11px;font-weight:700;color:var(--text-3);margin-bottom:9px;margin-left:4px;letter-spacing:1px}
+  .odo-row{display:flex;gap:8px}
+  .odo-inp{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:9px 13px;color:var(--text);font-family:var(--font);font-size:14px;font-weight:500;outline:none;transition:border-color .15s}
+  .odo-inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
+  .btn-upd{padding:9px 18px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-family:var(--font);font-weight:700;font-size:12px;cursor:pointer;transition:background .15s}
+  .btn-upd:hover{background:var(--accent-hov)}
+  .odo-note{font-size:11px;color:var(--text-3);margin-top:8px}
+
+  /* ALERTS */
+  .alert-row{display:flex;align-items:center;gap:14px;padding:13px 20px;border-bottom:1px solid var(--border-lt);transition:background .1s;cursor:default}
+  .alert-row:last-child{border-bottom:none}
+  .alert-row:hover{background:var(--surface2)}
+  .alert-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+  .alert-body{flex:1}
+  .alert-ttl{font-size:13px;font-weight:600}
+  .alert-dsc{font-size:11px;color:var(--text-3);margin-top:2px}
+  .alert-when{font-size:12px;font-weight:700;flex-shrink:0}
+
+  /* LOG ROWS */
+  .log-row{display:flex;align-items:center;gap:14px;padding:13px 20px;border-bottom:1px solid var(--border-lt);transition:background .1s}
+  .log-row:last-child{border-bottom:none}
+  .log-row:hover{background:var(--surface2);cursor:default}
+  .ldot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .ldot.fresh{background:var(--accent)} .ldot.old{background:var(--border)}
+  .ldate{font-size:11px;color:var(--text-3);min-width:76px;font-weight:500}
+  .lsvc{font-size:13px;color:var(--text);flex:1;font-weight:500}
+  .lkm{font-size:11px;color:var(--text-3);min-width:80px}
+  .lmeta{font-size:11px;color:var(--text-3);display:flex;gap:12px}
+  .lcost{font-size:12px;color:var(--text-2);font-weight:600;min-width:70px;text-align:right}
+  .lact{display:flex;gap:4px}
+
+  /* EMPTY */
+  .empty-state{background:var(--surface);border:1px solid var(--border-lt);border-radius:var(--r);padding:64px 40px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;box-shadow:var(--s1)}
+  .ei{font-size:52px;margin-bottom:4px}
+  .et{font-size:22px;font-weight:700;letter-spacing:-.3px}
+  .es{font-size:14px;color:var(--text-3);max-width:300px;line-height:1.6}
+  .no-sel{background:var(--surface);border:1px solid var(--border-lt);border-radius:var(--r);min-height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text-4);box-shadow:var(--s1)}
+  .ep{padding:36px 20px;text-align:center;font-size:13px;color:var(--text-3)}
+
+  /* MODAL */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .2s}
+  .overlay.open{opacity:1;pointer-events:all}
+  .modal{background:var(--surface);border-radius:18px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:var(--s3);transform:translateY(12px) scale(.98);transition:transform .22s cubic-bezier(.34,1.2,.64,1)}
+  .overlay.open .modal{transform:translateY(0) scale(1)}
+  .m-hdr{padding:24px 24px 0;display:flex;align-items:center;justify-content:space-between}
+  .m-ttl{font-size:20px;font-weight:700;letter-spacing:-.3px}
+  .m-close{width:28px;height:28px;border-radius:50%;border:none;background:var(--surface2);cursor:pointer;color:var(--text-3);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s}
+  .m-close:hover{background:var(--border-lt);color:var(--text)}
+  .m-sub{font-size:13px;color:var(--text-3);padding:6px 24px 0}
+  .m-body{padding:20px 24px;display:flex;flex-direction:column;gap:14px}
+  .m-foot{padding:16px 24px 24px;border-top:1px solid var(--border-lt);display:flex;justify-content:flex-end;gap:8px}
+
+  .fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .fg{display:flex;flex-direction:column;gap:5px}
+  .fg.full{grid-column:1/-1}
+  .fl{font-size:12px;font-weight:700;color:var(--text-2)}
+  .fi,.fs,.fta{background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:10px 13px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;width:100%}
+  .fi:focus,.fs:focus,.fta:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,113,227,.12);background:#fff}
+  .fs{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+  .fta{resize:vertical;min-height:72px}
+  .fh{font-size:11px;color:var(--text-3);margin-top:2px}
+  .cond{display:none} .cond.show{display:flex}
+  .dz{background:#fff5f5;border:1px solid #ffd7d5;border-radius:var(--rs);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .dzt{font-size:12px;color:#c0392b;font-weight:500}
+
+  /* SEGMENT */
+  .seg{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:3px;gap:2px}
+  .seg-b{flex:1;padding:7px 6px;border-radius:6px;border:none;background:transparent;font-family:var(--font);font-size:12px;font-weight:600;color:var(--text-3);cursor:pointer;transition:all .15s;text-align:center}
+  .seg-b.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(8px);background:rgba(29,29,31,.92);color:#fff;backdrop-filter:blur(8px);padding:11px 22px;border-radius:980px;font-size:13px;font-weight:500;box-shadow:var(--s2);opacity:0;transition:all .25s;z-index:9999;pointer-events:none;white-space:nowrap}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+  @media(max-width:960px){
+    .page{grid-template-columns:1fr}
+    .hero-stats{grid-template-columns:repeat(2,1fr)}
+    .bg2{grid-template-columns:1fr}
+    .sum-strip{grid-template-columns:repeat(2,1fr)}
+    .tbl-h,.tbl-r{grid-template-columns:2fr 1fr 1fr 1.2fr 80px}
+    .tbl-h>*:nth-child(3),.tbl-r>*:nth-child(3){display:none}
+  }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-inner">
+    <div class="nav-logo">Manten<span>.</span></div>
+    <div class="nav-div"></div>
+    <div class="nav-sub">Sistema de Mantenimiento de Activos</div>
+    <div class="nav-pills">
+      <div class="pill p-red"><div class="d"></div><span class="n" id="hv">0</span><span>vencidos</span></div>
+      <div class="pill p-ora"><div class="d"></div><span class="n" id="hp">0</span><span>próximos</span></div>
+      <div class="pill p-grn"><div class="d"></div><span class="n" id="hc">0</span><span>activos</span></div>
+    </div>
+    <div class="nav-acts">
+      <button class="btn btn-gray btn-sm" onclick="openAssetModal()">＋ Nuevo Activo</button>
+      <button class="btn btn-blue btn-sm" onclick="openLogModal()">✎ Registrar Servicio</button>
+    </div>
+  </div>
+</nav>
+
+<div class="sum-wrap">
+  <div class="sum-strip">
+    <div class="sc"><div class="sl">Total Activos</div><div class="sv blue" id="st">0</div><div class="ss" id="sd">—</div></div>
+    <div class="sc"><div class="sl">Servicios Vencidos</div><div class="sv red" id="sv">0</div><div class="ss">requieren atención</div></div>
+    <div class="sc"><div class="sl">Próximos 30 días</div><div class="sv ora" id="sp">0</div><div class="ss">servicios por vencer</div></div>
+    <div class="sc"><div class="sl">Último Servicio</div><div class="sv" id="sl" style="font-size:20px;letter-spacing:-.3px">—</div><div class="ss" id="sld">sin registros aún</div></div>
+  </div>
+</div>
+
+<div class="page">
+  <aside class="sidebar">
+    <div id="sidebar"></div>
+    <div class="sb-foot"><button class="sb-add" onclick="openAssetModal()">＋ Agregar Activo</button></div>
+  </aside>
+  <div class="content" id="content"></div>
+</div>
+
+<!-- MODAL: ACTIVO -->
+<div class="overlay" id="modal-asset">
+  <div class="modal">
+    <div class="m-hdr"><div class="m-ttl" id="ma-ttl">Nuevo Activo</div><button class="m-close" onclick="closeModal('modal-asset')">✕</button></div>
+    <div class="m-body">
+      <input type="hidden" id="f-id">
+      <div class="fr"><div class="fg full"><label class="fl">Nombre *</label><input class="fi" id="f-name" placeholder="Ej: Honda CRV, Aire Sala..."></div></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Tipo *</label>
+          <select class="fs" id="f-type" onchange="onTypeChange()">
+            <option value="">Seleccionar...</option>
+            <option value="car">🚗 Vehículo</option>
+            <option value="ac">❄️ Aire Acondicionado</option>
+            <option value="water">💧 Filtro de Agua</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">Marca / Modelo</label><input class="fi" id="f-model" placeholder="Toyota Corolla"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Año</label><input class="fi" id="f-year" type="number" placeholder="2022"></div>
+        <div class="fg cond" id="c-plate"><label class="fl">Placa</label><input class="fi" id="f-plate" placeholder="AAA-1234"></div>
+        <div class="fg cond" id="c-loc"><label class="fl">Ubicación</label><input class="fi" id="f-loc" placeholder="Sala, Cuarto..."></div>
+      </div>
+      <div class="fr cond" id="c-km">
+        <div class="fg"><label class="fl">Kilometraje Actual</label><input class="fi" id="f-km" type="number" placeholder="85000"></div>
+        <div class="fg"><label class="fl">Fecha de Lectura</label><input class="fi" id="f-km-date" type="date"></div>
+      </div>
+      <div class="fg"><label class="fl">Notas</label><textarea class="fta" id="f-notes" placeholder="Observaciones..."></textarea></div>
+      <div class="dz" id="danger-zone" style="display:none"><span class="dzt">⚠ Eliminar borrará el activo y todo su historial.</span><button class="btn-del" onclick="deleteAsset()">Eliminar</button></div>
+    </div>
+    <div class="m-foot"><button class="btn btn-gray" onclick="closeModal('modal-asset')">Cancelar</button><button class="btn btn-blue" onclick="saveAsset()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- MODAL: TIPO DE SERVICIO -->
+<div class="overlay" id="modal-stype">
+  <div class="modal">
+    <div class="m-hdr"><div class="m-ttl" id="mst-ttl">Tipo de Servicio</div><button class="m-close" onclick="closeModal('modal-stype')">✕</button></div>
+    <div class="m-sub" id="mst-asset"></div>
+    <div class="m-body">
+      <input type="hidden" id="st-id"><input type="hidden" id="st-aid">
+      <div class="fg"><label class="fl">Nombre del Servicio *</label><input class="fi" id="st-name" placeholder="Ej: Cambio de Aceite, Limpieza de Filtros..."></div>
+      <div class="fg">
+        <label class="fl">Tipo de Intervalo *</label>
+        <div class="seg">
+          <button class="seg-b active" id="seg-km"   onclick="setTrig('km')">Por Kilómetros</button>
+          <button class="seg-b"        id="seg-time" onclick="setTrig('time')">Por Tiempo</button>
+          <button class="seg-b"        id="seg-both" onclick="setTrig('both')">Ambos</button>
+        </div>
+      </div>
+      <div class="fr" id="st-km-row">
+        <div class="fg"><label class="fl">Cada cuántos km</label><input class="fi" id="st-km" type="number" placeholder="5000"><span class="fh">Ej: 5000 para cada 5,000 km</span></div>
+      </div>
+      <div class="fr" id="st-day-row" style="display:none">
+        <div class="fg"><label class="fl">Cada cuántos días</label><input class="fi" id="st-days" type="number" placeholder="90"><span class="fh">90 = 3 meses · 180 = 6 meses · 365 = anual</span></div>
+      </div>
+      <div class="fg"><label class="fl">Notas</label><input class="fi" id="st-notes" placeholder="Ej: Aceite 5W-30, filtro original..."></div>
+      <div class="dz" id="st-dz" style="display:none"><span class="dzt">⚠ Eliminar borrará este tipo y sus registros.</span><button class="btn-del" onclick="deleteServiceType()">Eliminar</button></div>
+    </div>
+    <div class="m-foot"><button class="btn btn-gray" onclick="closeModal('modal-stype')">Cancelar</button><button class="btn btn-blue" onclick="saveServiceType()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- MODAL: REGISTRAR SERVICIO -->
+<div class="overlay" id="modal-log">
+  <div class="modal">
+    <div class="m-hdr"><div class="m-ttl" id="ml-ttl">Registrar Servicio</div><button class="m-close" onclick="closeModal('modal-log')">✕</button></div>
+    <div class="m-body">
+      <input type="hidden" id="lg-id">
+      <div class="fg"><label class="fl">Activo *</label>
+        <select class="fs" id="lg-asset" onchange="onLogAsset()"><option value="">Seleccionar activo...</option></select>
+      </div>
+      <div class="fg"><label class="fl">Tipo de Servicio *</label>
+        <select class="fs" id="lg-stype"><option value="">Seleccionar primero un activo...</option></select>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Fecha *</label><input class="fi" id="lg-date" type="date"></div>
+        <div class="fg" id="lg-km-g" style="display:none"><label class="fl">Kilometraje al Servicio</label><input class="fi" id="lg-km" type="number" placeholder="85000"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Costo (opcional)</label><input class="fi" id="lg-cost" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="fg"><label class="fl">Taller / Proveedor</label><input class="fi" id="lg-ws" placeholder="AutoCare, DIY..."></div>
+      </div>
+      <div class="fg"><label class="fl">Notas</label><textarea class="fta" id="lg-notes" placeholder="Observaciones, repuestos..."></textarea></div>
+      <div class="dz" id="lg-dz" style="display:none"><span class="dzt">⚠ Eliminar este registro de servicio.</span><button class="btn-del" onclick="deleteLog()">Eliminar</button></div>
+    </div>
+    <div class="m-foot"><button class="btn btn-gray" onclick="closeModal('modal-log')">Cancelar</button><button class="btn btn-blue" onclick="saveLog()">Guardar</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──
+const KEY='manten-v5';
+function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return{assets:[],serviceTypes:[],logs:[],odo:[]};}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){}}
+let db=load();
+if(!db.serviceTypes)db.serviceTypes=[];
+let sel=db.assets.length?db.assets[0].id:null;
+
+// ── UTILS ──
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+function icon(t){return t==='car'?'🚗':t==='ac'?'❄️':'💧';}
+function icls(t){return t==='car'?'ic-car':t==='ac'?'ic-ac':'ic-wtr';}
+function tname(t){return t==='car'?'Vehículo':t==='ac'?'Aire Acondicionado':'Filtro de Agua';}
+function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2800);}
+function today(){return new Date().toISOString().split('T')[0];}
+function fmtDate(d){if(!d)return'—';return new Date(d+'T12:00:00').toLocaleDateString('es-PA',{day:'numeric',month:'short',year:'numeric'});}
+function daysBetween(d1,d2){return Math.round((new Date(d2+'T12:00:00')-new Date(d1+'T12:00:00'))/86400000);}
+function addDays(ds,n){const d=new Date(ds+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().split('T')[0];}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── CALC STATUS ──
+function calcStatus(asset,st){
+  const logs=db.logs.filter(l=>l.assetId===asset.id&&l.stId===st.id).sort((a,b)=>b.date>a.date?1:-1);
+  const last=logs[0]||null;
+  const res={lastDate:null,lastKm:null,nextDate:null,nextKm:null,pctKm:null,pctTime:null,pct:0,status:'ok',daysLeft:null,kmLeft:null,neverDone:!last};
+  if(last){res.lastDate=last.date;res.lastKm=last.km||null;}
+  if((st.trigger==='time'||st.trigger==='both')&&st.dayInterval&&last){
+    const nd=addDays(last.date,st.dayInterval);res.nextDate=nd;
+    res.pctTime=Math.round((daysBetween(last.date,today())/st.dayInterval)*100);
+    res.daysLeft=daysBetween(today(),nd);
+  }
+  if((st.trigger==='km'||st.trigger==='both')&&st.kmInterval&&last&&last.km){
+    const nk=last.km+st.kmInterval;res.nextKm=nk;
+    const cur=asset.km||last.km;
+    res.pctKm=Math.round(((cur-last.km)/st.kmInterval)*100);
+    res.kmLeft=nk-cur;
+  }
+  const pcts=[res.pctKm,res.pctTime].filter(p=>p!==null);
+  res.pct=pcts.length?Math.max(...pcts):0;
+  if(res.pct>=100)res.status='due';
+  else if(res.pct>=80)res.status='warn';
+  return res;
+}
+
+function assetStatus(asset){
+  const sts=db.serviceTypes.filter(s=>s.assetId===asset.id);
+  if(!sts.length)return'ok';
+  let w='ok';
+  for(const st of sts){const s=calcStatus(asset,st).status;if(s==='due')return'due';if(s==='warn')w='warn';}
+  return w;
+}
+
+// ── RENDER ──
+function render(){renderSummary();renderSidebar();renderContent();}
+
+function renderSummary(){
+  const n=db.assets.length;
+  document.getElementById('hc').textContent=n;
+  document.getElementById('st').textContent=n;
+  const cars=db.assets.filter(a=>a.type==='car').length;
+  const acs=db.assets.filter(a=>a.type==='ac').length;
+  const water=db.assets.filter(a=>a.type==='water').length;
+  const parts=[];
+  if(cars)parts.push(cars+(cars===1?' vehículo':' vehículos'));
+  if(acs)parts.push(acs+(acs===1?' aire':' aires'));
+  if(water)parts.push(water+(water===1?' filtro':' filtros'));
+  document.getElementById('sd').textContent=parts.join(' · ')||'—';
+  let venc=0,prox=0;
+  db.assets.forEach(a=>{
+    db.serviceTypes.filter(s=>s.assetId===a.id).forEach(st=>{
+      const s=calcStatus(a,st);
+      if(s.status==='due')venc++;
+      else if(s.status==='warn')prox++;
+      else if(!s.neverDone&&s.daysLeft!==null&&s.daysLeft<=30)prox++;
+    });
+  });
+  document.getElementById('sv').textContent=venc;
+  document.getElementById('sp').textContent=prox;
+  document.getElementById('hv').textContent=venc;
+  document.getElementById('hp').textContent=prox;
+  const allLogs=db.logs.slice().sort((a,b)=>b.date>a.date?1:-1);
+  if(allLogs.length){
+    const l=allLogs[0];
+    const st=db.serviceTypes.find(x=>x.id===l.stId);
+    const a=db.assets.find(x=>x.id===l.assetId);
+    document.getElementById('sl').textContent=fmtDate(l.date);
+    document.getElementById('sld').textContent=(a?a.name:'')+(st?' — '+st.name:'');
+  }else{document.getElementById('sl').textContent='—';document.getElementById('sld').textContent='sin registros aún';}
+}
+
+function renderSidebar(){
+  const groups=[{type:'car',label:'Vehículos'},{type:'ac',label:'Aires Acondicionados'},{type:'water',label:'Filtros de Agua'}];
+  let html='';
+  groups.forEach(g=>{
+    const items=db.assets.filter(a=>a.type===g.type);
+    if(!items.length)return;
+    html+=`<div class="sb-sec"><div class="sb-lbl">${g.label}</div><div class="sb-list">`;
+    items.forEach(a=>{
+      const sub=a.type==='car'?[a.year,a.plate].filter(Boolean).join(' · '):[a.model,a.loc].filter(Boolean).join(' · ')||tname(a.type);
+      const st=assetStatus(a);
+      const dc=st==='due'?'d-due':st==='warn'?'d-warn':'d-ok';
+      html+=`<button class="abt ${a.id===sel?'active':''}" onclick="selectAsset('${a.id}')">
+        <div class="ab-ico ${icls(a.type)}">${icon(a.type)}</div>
+        <div class="ab-inf"><span class="abn">${esc(a.name)}</span><span class="abs">${esc(sub)}</span></div>
+        <div class="sdot ${dc}"></div>
+      </button>`;
+    });
+    html+=`</div></div>`;
+  });
+  if(!db.assets.length)html=`<div class="sb-sec"><p style="font-size:12px;color:var(--text-3);line-height:1.7;padding:4px 8px">Sin activos aún.<br>Haz clic en <strong>Agregar Activo</strong>.</p></div>`;
+  document.getElementById('sidebar').innerHTML=html;
+}
+
+function renderContent(){
+  const el=document.getElementById('content');
+  if(!db.assets.length){
+    el.innerHTML=`<div class="empty-state"><div class="ei">🔧</div><div class="et">Bienvenido a Manten.</div><div class="es">Comienza registrando tu primer activo — vehículo, aire acondicionado o filtro de agua.</div><button class="btn btn-blue" style="margin-top:12px" onclick="openAssetModal()">＋ Nuevo Activo</button></div>`;
+    return;
+  }
+  const asset=db.assets.find(a=>a.id===sel);
+  if(!asset){el.innerHTML=`<div class="no-sel"><div style="font-size:36px;opacity:.2">👈</div><p style="font-size:13px;color:var(--text-3)">Selecciona un activo</p></div>`;return;}
+
+  const subParts=[asset.year,asset.model,asset.plate?`Placa ${asset.plate}`:'',asset.loc||''].filter(Boolean);
+  const stypes=db.serviceTypes.filter(s=>s.assetId===asset.id);
+  const astatus=assetStatus(asset);
+  const assetLogs=db.logs.filter(l=>l.assetId===asset.id).slice().sort((a,b)=>b.date>a.date?1:-1);
+
+  // ── Hero stats ──
+  let statsH='';
+  if(asset.type==='car'){
+    const km=asset.km?Number(asset.km).toLocaleString('es'):'—';
+    let minKmLeft=null,minDaysLeft=null;
+    stypes.forEach(st=>{const s=calcStatus(asset,st);if(s.kmLeft!==null&&(minKmLeft===null||s.kmLeft<minKmLeft))minKmLeft=s.kmLeft;if(s.daysLeft!==null&&(minDaysLeft===null||s.daysLeft<minDaysLeft))minDaysLeft=s.daysLeft;});
+    const nkd=minKmLeft!==null?Number(Math.max(0,minKmLeft)).toLocaleString('es')+'<span>km</span>':'—';
+    const ndd=minDaysLeft!==null?(minDaysLeft<=0?'<span style="color:var(--red)">VENCIDO</span>':minDaysLeft+'<span>días</span>'):'—';
+    const kpct=minKmLeft!==null?Math.min(100,Math.max(0,(1-minKmLeft/5000)*100)):0;
+    const dpct=minDaysLeft!==null?Math.min(100,Math.max(0,(30-minDaysLeft)/30*100)):0;
+    statsH=`
+      <div class="stat"><div class="stat-lbl">Kilometraje</div><div class="stat-val">${km}</div><div class="sbar"><div class="sbf s-ok" style="width:40%"></div></div></div>
+      <div class="stat"><div class="stat-lbl">Próx. km</div><div class="stat-val">${nkd}</div><div class="sbar"><div class="sbf ${minKmLeft!==null&&minKmLeft<=500?'s-due':minKmLeft!==null&&minKmLeft<=1500?'s-warn':'s-ok'}" style="width:${kpct}%"></div></div></div>
+      <div class="stat"><div class="stat-lbl">Próx. días</div><div class="stat-val">${ndd}</div><div class="sbar"><div class="sbf ${minDaysLeft!==null&&minDaysLeft<=0?'s-due':minDaysLeft!==null&&minDaysLeft<=7?'s-warn':'s-ok'}" style="width:${dpct}%"></div></div></div>
+      <div class="stat"><div class="stat-lbl">Servicios</div><div class="stat-val">${assetLogs.length}<span>total</span></div><div class="sbar"><div class="sbf" style="width:${Math.min(100,assetLogs.length*10)}%"></div></div></div>`;
+  }else{
+    let minDaysLeft=null;
+    stypes.forEach(st=>{const s=calcStatus(asset,st);if(s.daysLeft!==null&&(minDaysLeft===null||s.daysLeft<minDaysLeft))minDaysLeft=s.daysLeft;});
+    const lastLog=assetLogs[0];
+    const ndd=minDaysLeft!==null?(minDaysLeft<=0?'<span style="color:var(--red)">VENCIDO</span>':minDaysLeft+'<span>días</span>'):'—';
+    statsH=`
+      <div class="stat"><div class="stat-lbl">Próx. Servicio</div><div class="stat-val">${ndd}</div><div class="sbar"><div class="sbf ${minDaysLeft!==null&&minDaysLeft<=0?'s-due':minDaysLeft!==null&&minDaysLeft<=7?'s-warn':'s-ok'}" style="width:${minDaysLeft!==null?Math.min(100,(30-minDaysLeft)/30*100):0}%"></div></div></div>
+      <div class="stat"><div class="stat-lbl">Último</div><div class="stat-val" style="font-size:16px;letter-spacing:0">${lastLog?fmtDate(lastLog.date):'—'}</div><div class="sbar"><div class="sbf s-ok" style="width:${lastLog?60:0}%"></div></div></div>
+      <div class="stat"><div class="stat-lbl">Servicios</div><div class="stat-val">${assetLogs.length}<span>total</span></div><div class="sbar"><div class="sbf" style="width:${Math.min(100,assetLogs.length*10)}%"></div></div></div>`;
+  }
+
+  const badgeH=astatus==='due'?`<span class="badge b-due">⚠ Vencido</span>`:astatus==='warn'?`<span class="badge b-warn">↑ Próximo</span>`:`<span class="badge b-ok">✓ Al día</span>`;
+
+  // ── Table ──
+  let tableH='';
+  if(!stypes.length){
+    tableH=`<div class="ep">No hay tipos de servicio. Haz clic en <strong>＋ Agregar servicio</strong> para comenzar.</div>`;
+  }else{
+    stypes.forEach(st=>{
+      const s=calcStatus(asset,st);
+      let intv='';
+      if(st.trigger==='km')intv=`Cada ${Number(st.kmInterval).toLocaleString('es')} km`;
+      else if(st.trigger==='time')intv=`Cada ${st.dayInterval} días`;
+      else intv=`${Number(st.kmInterval).toLocaleString('es')} km / ${st.dayInterval} días`;
+      const ttag=st.trigger==='km'?'<span class="ttag t-km">📏 km</span>':st.trigger==='time'?'<span class="ttag t-time">📅 tiempo</span>':'<span class="ttag t-both">⚡ ambos</span>';
+      let lastStr='—';
+      if(s.lastDate){lastStr=fmtDate(s.lastDate);if(s.lastKm)lastStr+=`<br><span style="font-size:10px;color:var(--text-4)">${Number(s.lastKm).toLocaleString('es')} km</span>`;}
+      let nextStr='',nc='td';
+      const np=[];
+      if(s.nextDate){const dl=s.daysLeft;if(dl<=0){np.push(`<span style="color:var(--red);font-weight:700">VENCIDO</span>`);nc='td alert';}else{np.push(fmtDate(s.nextDate));np.push(`<span style="font-size:10px;color:var(--text-3)">en ${dl} días</span>`);if(dl<=30)nc='td warn';}}
+      if(s.nextKm){const kl=Math.round(s.kmLeft||0);if(kl<=0){np.push(`<span style="color:var(--red);font-weight:700">VENCIDO</span>`);nc='td alert';}else{np.push(`${Number(s.nextKm).toLocaleString('es')} km`);np.push(`<span style="font-size:10px;color:var(--text-3)">faltan ${Number(kl).toLocaleString('es')} km</span>`);if(kl<=500)nc='td alert';else if(kl<=1500)nc='td warn';}}
+      if(!np.length)nextStr=s.neverDone?`<span style="color:var(--text-4)">Sin registros</span>`:'—';else nextStr=np.join('<br>');
+      const pct=Math.min(100,Math.max(0,s.pct||0));
+      const fc=s.status==='due'?'f-due':s.status==='warn'?'f-warn':'f-ok';
+      const pc=s.status==='due'?'var(--red)':s.status==='warn'?'var(--orange)':'var(--green)';
+      tableH+=`<div class="tbl-r">
+        <div><div class="rname">${esc(st.name)}</div>${ttag}</div>
+        <div class="td">${intv}</div>
+        <div class="td hi">${lastStr}</div>
+        <div class="${nc}">${nextStr}</div>
+        <div class="td"><div class="mw"><div class="mb"><div class="mf ${fc}" style="width:${pct}%"></div></div><span class="pct" style="color:${pc}">${s.neverDone?'—':pct+'%'}</span></div></div>
+        <div class="td" style="display:flex;gap:5px;align-items:center">
+          <button class="btn-log ${s.status==='due'?'urg':''}" onclick="openLogModal('${asset.id}','${st.id}')">LOG</button>
+          <button class="ico-btn" onclick="openServiceTypeModal('${asset.id}','${st.id}')" title="Editar">✎</button>
+        </div>
+      </div>`;
+    });
+  }
+
+  // ── Alerts ──
+  const alerts=[];
+  stypes.forEach(st=>{
+    const s=calcStatus(asset,st);
+    if(s.neverDone)return;
+    const isDue=s.status==='due';
+    const isSoon=(s.daysLeft!==null&&s.daysLeft>=0&&s.daysLeft<=30)||(s.kmLeft!==null&&s.kmLeft>=0&&s.kmLeft<=1500);
+    if(!isDue&&!isSoon)return;
+    let when='',wc='var(--text-3)';
+    if(isDue){when='VENCIDO';wc='var(--red)';}
+    else if(s.daysLeft!==null&&s.daysLeft<=30){when=s.daysLeft+' días';wc=s.daysLeft<=7?'var(--red)':'var(--orange)';}
+    else if(s.kmLeft!==null&&s.kmLeft<=1500){when=Number(s.kmLeft).toLocaleString('es')+' km';wc=s.kmLeft<=200?'var(--red)':'var(--orange)';}
+    const bg=isDue?'#fff2f1':s.status==='warn'?'#fff8f0':'#f5f5f7';
+    alerts.push(`<div class="alert-row"><div class="alert-ico" style="background:${bg}">${icon(asset.type)}</div><div class="alert-body"><div class="alert-ttl">${esc(st.name)}</div><div class="alert-dsc">${esc(asset.name)}</div></div><div class="alert-when" style="color:${wc}">${when}</div></div>`);
+  });
+  const alertsBody=alerts.length?alerts.join(''):`<div class="ep">Sin alertas próximas.</div>`;
+
+  const odoH=asset.type==='car'?`
+    <div class="bg2">
+      <div class="card">
+        <div class="card-hdr"><div class="card-ttl">Odómetro</div></div>
+        <div class="odo-in">
+          <div class="odo-disp" id="odo-display">${renderOdo(asset.km)}</div>
+          <div class="odo-row"><input class="odo-inp" id="odo-input" type="number" placeholder="Lectura actual..." value="${asset.km||''}"><button class="btn-upd" onclick="updateOdo()">Actualizar</button></div>
+          <div class="odo-note" id="odo-note">${asset.kmDate?`Última lectura · ${fmtDate(asset.kmDate)}`:'Sin lecturas previas'}</div>
+        </div>
+      </div>
+      <div class="card"><div class="card-hdr"><div class="card-ttl">Alertas Próximas</div></div>${alertsBody}</div>
+    </div>`:`<div class="card"><div class="card-hdr"><div class="card-ttl">Alertas Próximas</div></div>${alertsBody}</div>`;
+
+  const histH=assetLogs.length?assetLogs.map((l,i)=>{
+    const st=db.serviceTypes.find(x=>x.id===l.stId);
+    return`<div class="log-row"><div class="ldot ${i===0?'fresh':'old'}"></div><div class="ldate">${fmtDate(l.date)}</div><div class="lsvc">${esc(st?st.name:'Servicio')}</div><div class="lkm">${l.km?Number(l.km).toLocaleString('es')+' km':''}</div><div class="lmeta">${l.ws?`<span>${esc(l.ws)}</span>`:''}</div><div class="lcost">${l.cost?'$'+Number(l.cost).toFixed(2):''}</div><div class="lact"><button class="ico-btn" onclick="openLogModal(null,null,'${l.id}')" title="Editar">✎</button></div></div>`;
+  }).join(''):`<div class="ep">Aún no hay servicios registrados para este activo.</div>`;
+
+  el.innerHTML=`
+    <div class="card hero">
+      <div class="hero-bg">${icon(asset.type)}</div>
+      <div class="hero-in">
+        <div class="hero-top">
+          <div><div class="hero-name">${esc(asset.name)}</div><div class="hero-sub">${esc(subParts.join(' · ')||tname(asset.type))}</div></div>
+          <div class="hero-r">${badgeH}<button class="btn btn-gray btn-sm" onclick="openAssetModal('${asset.id}')">Editar</button></div>
+        </div>
+        <div class="hero-stats">${statsH}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-ttl">Programa de Mantenimiento</div><button class="btn-ghost" onclick="openServiceTypeModal('${asset.id}')">＋ Agregar servicio</button></div>
+      <div class="tbl-h"><div class="th">Servicio</div><div class="th">Intervalo</div><div class="th">Último</div><div class="th">Próximo</div><div class="th">Progreso</div><div class="th"></div></div>
+      ${tableH}
+    </div>
+    ${odoH}
+    <div class="card">
+      <div class="card-hdr"><div class="card-ttl">Historial de Servicios</div><button class="btn-ghost" onclick="exportCSV('${asset.id}')">Exportar CSV</button></div>
+      ${histH}
+    </div>`;
+}
+
+function renderOdo(km){
+  if(!km)return`<div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-sep">,</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-unit">KM</div>`;
+  const s=String(Math.round(km)).padStart(6,'0');
+  return`<div class="odo-d">${s[0]}</div><div class="odo-d">${s[1]}</div><div class="odo-sep">,</div><div class="odo-d">${s[2]}</div><div class="odo-d">${s[3]}</div><div class="odo-d">${s[4]}</div><div class="odo-unit">KM</div>`;
+}
+
+// ── ODOMETER ──
+function updateOdo(){
+  const asset=db.assets.find(a=>a.id===sel);if(!asset)return;
+  const val=parseFloat(document.getElementById('odo-input').value);
+  if(!val||val<0){toast('⚠ Ingresa un kilometraje válido');return;}
+  asset.km=val;asset.kmDate=today();
+  db.odo.push({id:uid(),assetId:sel,km:val,date:asset.kmDate});
+  save();
+  document.getElementById('odo-display').innerHTML=renderOdo(val);
+  document.getElementById('odo-note').textContent=`Última lectura · ${fmtDate(asset.kmDate)} · ${val.toLocaleString('es')} km`;
+  render();toast('✓ Odómetro actualizado');
+}
+
+// ── ASSET MODAL ──
+function selectAsset(id){sel=id;render();}
+function openAssetModal(editId){
+  clearAF();
+  if(editId){
+    const a=db.assets.find(x=>x.id===editId);if(!a)return;
+    document.getElementById('ma-ttl').textContent='Editar Activo';
+    document.getElementById('f-id').value=a.id;document.getElementById('f-name').value=a.name||'';
+    document.getElementById('f-type').value=a.type||'';document.getElementById('f-model').value=a.model||'';
+    document.getElementById('f-year').value=a.year||'';document.getElementById('f-plate').value=a.plate||'';
+    document.getElementById('f-loc').value=a.loc||'';document.getElementById('f-km').value=a.km||'';
+    document.getElementById('f-km-date').value=a.kmDate||'';document.getElementById('f-notes').value=a.notes||'';
+    document.getElementById('danger-zone').style.display='flex';onTypeChange();
+  }else{
+    document.getElementById('ma-ttl').textContent='Nuevo Activo';
+    document.getElementById('danger-zone').style.display='none';
+    document.getElementById('f-km-date').value=today();
+  }
+  document.getElementById('modal-asset').classList.add('open');
+}
+function clearAF(){['f-id','f-name','f-model','f-year','f-plate','f-loc','f-km','f-km-date','f-notes'].forEach(i=>document.getElementById(i).value='');document.getElementById('f-type').value='';onTypeChange();}
+function onTypeChange(){const t=document.getElementById('f-type').value;document.getElementById('c-plate').classList.toggle('show',t==='car');document.getElementById('c-loc').classList.toggle('show',t==='ac'||t==='water');document.getElementById('c-km').classList.toggle('show',t==='car');}
+function saveAsset(){
+  const name=document.getElementById('f-name').value.trim();
+  const type=document.getElementById('f-type').value;
+  if(!name){toast('⚠ El nombre es obligatorio');return;}
+  if(!type){toast('⚠ Selecciona el tipo de activo');return;}
+  const editId=document.getElementById('f-id').value;
+  const asset={id:editId||uid(),name,type,model:document.getElementById('f-model').value.trim(),year:document.getElementById('f-year').value,plate:document.getElementById('f-plate').value.trim().toUpperCase(),loc:document.getElementById('f-loc').value.trim(),km:parseFloat(document.getElementById('f-km').value)||null,kmDate:document.getElementById('f-km-date').value,notes:document.getElementById('f-notes').value.trim(),createdAt:editId?(db.assets.find(a=>a.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString()};
+  if(editId){const i=db.assets.findIndex(a=>a.id===editId);if(i>-1)db.assets[i]=asset;toast('✓ Activo actualizado');}
+  else{db.assets.push(asset);sel=asset.id;toast('✓ Activo agregado');}
+  save();closeModal('modal-asset');render();
+}
+function deleteAsset(){
+  const editId=document.getElementById('f-id').value;if(!editId)return;
+  if(!confirm('¿Eliminar este activo y todo su historial?'))return;
+  db.assets=db.assets.filter(a=>a.id!==editId);db.serviceTypes=db.serviceTypes.filter(s=>s.assetId!==editId);db.logs=db.logs.filter(l=>l.assetId!==editId);db.odo=db.odo.filter(o=>o.assetId!==editId);
+  if(sel===editId)sel=db.assets.length?db.assets[0].id:null;
+  save();closeModal('modal-asset');toast('Activo eliminado');render();
+}
+
+// ── SERVICE TYPE MODAL ──
+let stTrig='km';
+function setTrig(t){
+  stTrig=t;
+  ['km','time','both'].forEach(x=>document.getElementById('seg-'+x).classList.toggle('active',x===t));
+  document.getElementById('st-km-row').style.display=(t==='km'||t==='both')?'grid':'none';
+  document.getElementById('st-day-row').style.display=(t==='time'||t==='both')?'grid':'none';
+}
+function openServiceTypeModal(assetId,editId){
+  stTrig='km';['st-id','st-name','st-km','st-days','st-notes'].forEach(i=>document.getElementById(i).value='');
+  setTrig('km');document.getElementById('st-dz').style.display='none';
+  if(editId){
+    const st=db.serviceTypes.find(x=>x.id===editId);if(!st)return;
+    document.getElementById('mst-ttl').textContent='Editar Tipo de Servicio';
+    document.getElementById('st-id').value=st.id;document.getElementById('st-aid').value=st.assetId;
+    document.getElementById('st-name').value=st.name||'';document.getElementById('st-km').value=st.kmInterval||'';
+    document.getElementById('st-days').value=st.dayInterval||'';document.getElementById('st-notes').value=st.notes||'';
+    stTrig=st.trigger||'km';setTrig(stTrig);document.getElementById('st-dz').style.display='flex';
+    const a=db.assets.find(x=>x.id===st.assetId);document.getElementById('mst-asset').textContent=a?a.name:'';
+  }else{
+    document.getElementById('mst-ttl').textContent='Nuevo Tipo de Servicio';
+    document.getElementById('st-aid').value=assetId||'';
+    const a=db.assets.find(x=>x.id===assetId);
+    document.getElementById('mst-asset').textContent=a?a.name:'';
+    if(a&&a.type!=='car')setTrig('time');
+  }
+  document.getElementById('modal-stype').classList.add('open');
+}
+function saveServiceType(){
+  const name=document.getElementById('st-name').value.trim();
+  if(!name){toast('⚠ El nombre es obligatorio');return;}
+  const km=parseFloat(document.getElementById('st-km').value)||null;
+  const days=parseFloat(document.getElementById('st-days').value)||null;
+  if((stTrig==='km'||stTrig==='both')&&!km){toast('⚠ Ingresa el intervalo en km');return;}
+  if((stTrig==='time'||stTrig==='both')&&!days){toast('⚠ Ingresa el intervalo en días');return;}
+  const editId=document.getElementById('st-id').value;
+  const st={id:editId||uid(),assetId:document.getElementById('st-aid').value,name,trigger:stTrig,kmInterval:km,dayInterval:days,notes:document.getElementById('st-notes').value.trim(),createdAt:editId?(db.serviceTypes.find(s=>s.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString()};
+  if(editId){const i=db.serviceTypes.findIndex(s=>s.id===editId);if(i>-1)db.serviceTypes[i]=st;toast('✓ Tipo de servicio actualizado');}
+  else{db.serviceTypes.push(st);toast('✓ Tipo de servicio agregado');}
+  save();closeModal('modal-stype');render();
+}
+function deleteServiceType(){
+  const editId=document.getElementById('st-id').value;if(!editId)return;
+  if(!confirm('¿Eliminar este tipo de servicio y todos sus registros?'))return;
+  db.serviceTypes=db.serviceTypes.filter(s=>s.id!==editId);db.logs=db.logs.filter(l=>l.stId!==editId);
+  save();closeModal('modal-stype');toast('Tipo de servicio eliminado');render();
+}
+
+// ── LOG MODAL ──
+function openLogModal(preAid,preStId,editLogId){
+  ['lg-id','lg-km','lg-cost','lg-ws','lg-notes'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('lg-date').value=today();document.getElementById('lg-dz').style.display='none';
+  const asel=document.getElementById('lg-asset');
+  asel.innerHTML='<option value="">Seleccionar activo...</option>';
+  db.assets.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;asel.appendChild(o);});
+  if(editLogId){
+    const l=db.logs.find(x=>x.id===editLogId);if(!l)return;
+    document.getElementById('ml-ttl').textContent='Editar Registro';
+    document.getElementById('lg-id').value=l.id;document.getElementById('lg-date').value=l.date||today();
+    document.getElementById('lg-km').value=l.km||'';document.getElementById('lg-cost').value=l.cost||'';
+    document.getElementById('lg-ws').value=l.ws||'';document.getElementById('lg-notes').value=l.notes||'';
+    asel.value=l.assetId;onLogAsset();document.getElementById('lg-stype').value=l.stId||'';
+    const a=db.assets.find(x=>x.id===l.assetId);if(a&&a.type==='car')document.getElementById('lg-km-g').style.display='block';
+    document.getElementById('lg-dz').style.display='flex';
+  }else{
+    document.getElementById('ml-ttl').textContent='Registrar Servicio';
+    if(preAid){asel.value=preAid;onLogAsset();}
+    if(preStId)document.getElementById('lg-stype').value=preStId;
+    const a=db.assets.find(x=>x.id===preAid);
+    if(a&&a.type==='car'){document.getElementById('lg-km-g').style.display='block';document.getElementById('lg-km').value=a.km||'';}
+    else document.getElementById('lg-km-g').style.display='none';
+  }
+  document.getElementById('modal-log').classList.add('open');
+}
+function onLogAsset(){
+  const aid=document.getElementById('lg-asset').value;
+  const a=db.assets.find(x=>x.id===aid);
+  const sts=db.serviceTypes.filter(s=>s.assetId===aid);
+  const sel2=document.getElementById('lg-stype');
+  sel2.innerHTML='<option value="">Seleccionar servicio...</option>';
+  sts.forEach(st=>{const o=document.createElement('option');o.value=st.id;o.textContent=st.name;sel2.appendChild(o);});
+  document.getElementById('lg-km-g').style.display=(a&&a.type==='car')?'block':'none';
+  if(a&&a.type==='car')document.getElementById('lg-km').value=a.km||'';
+}
+function saveLog(){
+  const aid=document.getElementById('lg-asset').value;
+  const stId=document.getElementById('lg-stype').value;
+  const date=document.getElementById('lg-date').value;
+  if(!aid){toast('⚠ Selecciona un activo');return;}
+  if(!stId){toast('⚠ Selecciona el tipo de servicio');return;}
+  if(!date){toast('⚠ La fecha es obligatoria');return;}
+  const editId=document.getElementById('lg-id').value;
+  const kmVal=parseFloat(document.getElementById('lg-km').value)||null;
+  const log={id:editId||uid(),assetId:aid,stId,date,km:kmVal,cost:parseFloat(document.getElementById('lg-cost').value)||null,ws:document.getElementById('lg-ws').value.trim(),notes:document.getElementById('lg-notes').value.trim(),createdAt:editId?(db.logs.find(l=>l.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString()};
+  if(kmVal){const a=db.assets.find(x=>x.id===aid);if(a&&(!a.km||kmVal>a.km)){a.km=kmVal;a.kmDate=date;}}
+  if(editId){const i=db.logs.findIndex(l=>l.id===editId);if(i>-1)db.logs[i]=log;toast('✓ Registro actualizado');}
+  else{db.logs.push(log);toast('✓ Servicio registrado');}
+  save();closeModal('modal-log');render();
+}
+function deleteLog(){
+  const editId=document.getElementById('lg-id').value;if(!editId)return;
+  if(!confirm('¿Eliminar este registro de servicio?'))return;
+  db.logs=db.logs.filter(l=>l.id!==editId);
+  save();closeModal('modal-log');toast('Registro eliminado');render();
+}
+
+// ── CSV EXPORT ──
+function exportCSV(assetId){
+  const a=db.assets.find(x=>x.id===assetId);if(!a)return;
+  const logs=db.logs.filter(l=>l.assetId===assetId).slice().sort((a,b)=>b.date>a.date?1:-1);
+  if(!logs.length){toast('⚠ Sin registros para exportar');return;}
+  const rows=[['Fecha','Servicio','Kilometraje','Costo','Taller','Notas']];
+  logs.forEach(l=>{const st=db.serviceTypes.find(s=>s.id===l.stId);rows.push([l.date,st?st.name:'',l.km||'',l.cost||'',l.ws||'',l.notes||'']);});
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const el=document.createElement('a');el.href=URL.createObjectURL(blob);el.download=`${a.name.replace(/\s+/g,'_')}_historial.csv`;el.click();URL.revokeObjectURL(el.href);
+  toast('✓ CSV exportado');
+}
+
+// ── MODALS ──
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});});
+
+render();
+</script>
+</body>
+</html>
