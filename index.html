@@ -657,44 +657,46 @@ function openAssetModal(editId){
 function clearAF(){['f-id','f-name','f-model','f-year','f-plate','f-loc','f-km','f-km-date','f-notes'].forEach(i=>document.getElementById(i).value='');document.getElementById('f-type').value='';onTypeChange();}
 function onTypeChange(){const t=document.getElementById('f-type').value;document.getElementById('c-plate').classList.toggle('show',t==='car');document.getElementById('c-loc').classList.toggle('show',t==='ac'||t==='water');document.getElementById('c-km').classList.toggle('show',t==='car');}
 async function saveAsset() {
-  const id = document.getElementById('f-id').value || uid();
-  const name = document.getElementById('f-name').value;
-  const type = document.getElementById('f-type').value;
+    // 1. Recogemos los datos del formulario con los nombres NUEVOS
+    const id = document.getElementById('f-id').value || Math.random().toString(36).substr(2, 9);
+    const name = document.getElementById('f-name').value;
+    const type = document.getElementById('f-type').value;
 
-  if(!name || !type){ toast('⚠ Nombre y Tipo son obligatorios'); return; }
+    const assetData = {
+        id: id,
+        name: name,                // Antes era 'nombre'
+        type: type,                // Antes era 'categoria'
+        purchaseDate: document.getElementById('f-purchase-date').value || null, // Antes 'fecha_compra'
+        kmDate: document.getElementById('f-km-date').value || null,           // Antes 'proximo_mantenimiento'
+        notes: document.getElementById('f-notes').value || ""                 // Antes 'notas'
+    };
 
-  // ESTA ES LA PARTE CLAVE: Los nombres deben ser IGUALES a Supabase
-  const assetData = {
-    id: id,
-    nombre: name,
-    categoria: type,
-    fecha_compra: today(), // O el ID del campo de fecha si lo tienes
-    proximo_mantenimiento: document.getElementById('f-km-date').value || today()
-  };
+    console.log("💾 Guardando en Supabase:", assetData);
 
-  try {
-    const { data, error } = await supabaseClient
-      .from('activos')
-      .upsert([assetData])
-      .select();
+    try {
+        const { data, error } = await supabaseClient
+            .from('activos')
+            .upsert(assetData); // Upsert inserta si no existe o actualiza si el ID coincide
 
-    if (error) throw error;
+        if (error) throw error;
 
-    // Actualizamos la lista local con lo que nos devuelve la nube
-    const index = db.assets.findIndex(a => a.id === id);
-    if(index > -1) db.assets[index] = data[0];
-    else db.assets.push(data[0]);
+        // 2. Actualizamos la "mochila" local (db.assets) para no tener que recargar la página
+        const index = db.assets.findIndex(a => a.id === id);
+        if (index > -1) {
+            db.assets[index] = { ...assetData, services: db.assets[index].services || [], logs: db.assets[index].logs || [] };
+        } else {
+            db.assets.push({ ...assetData, services: [], logs: [] });
+        }
 
-    sel = id;
-    save(); 
-    closeModal('modal-asset');
-    render();
-    toast('✅ ¡Sincronizado con Supabase!');
-    
-  } catch (error) {
-    console.error("Error real:", error);
-    toast('❌ Error: ' + error.message);
-  }
+        sel = id;
+        closeModal('modal-asset');
+        render(); // Redibujamos la interfaz
+        toast('✅ Activo guardado en la nube');
+
+    } catch (error) {
+        console.error("❌ Error al guardar:", error);
+        alert("Error al guardar en la nube: " + error.message);
+    }
 }
 function deleteAsset(){
   const editId=document.getElementById('f-id').value;if(!editId)return;
@@ -835,8 +837,6 @@ render();
   const supabaseClient = supabase.createClient(URL_SB, KEY_SB);
 
  async function cargarDatosIniciales() {
-  console.log("🔍 Iniciando traducción de datos...");
-  
   try {
     const { data, error } = await supabaseClient
       .from('activos')
@@ -845,24 +845,23 @@ render();
     if (error) throw error;
 
     if (data && data.length > 0) {
-      // MAPEAMOS: Convertimos lo que viene de Supabase al formato de tu App
+      // Sincronizamos la mochila local (db.assets)
       db.assets = data.map(item => ({
-        id: item.id,
-        name: item.nombre,      // Traducción: nombre -> name
-        type: item.categoria,   // Traducción: categoria -> type
-        kmDate: item.proximo_mantenimiento,
-        services: item.services || [], // Inicializamos arrays vacíos para que no de error
+        ...item,
+        // Aseguramos que existan estos arrays para que el render no falle
+        services: item.services || [],
         logs: item.logs || []
       }));
-      
-      if (!sel) sel = db.assets[0].id;
 
-      // Dibujamos la interfaz
+      // Forzamos la selección del primer activo real de la lista
+      sel = db.assets[0].id;
+
+      // ¡DIBUJAR!
       render(); 
-      console.log("🚀 Interfaz traducida y lista");
+      console.log("🚀 Interfaz sincronizada y brillando");
     }
   } catch (err) {
-    console.error("❌ Error:", err);
+    console.error("Error en carga inicial:", err);
   }
 }
 </script>
