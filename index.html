@@ -463,7 +463,7 @@
     <div class="m-body">
       <input type="hidden" id="lg-id">
       <div class="fg"><label class="fl">Activo *</label><select class="fs" id="lg-asset" onchange="onLogAsset()"><option value="">Seleccionar activo...</option></select></div>
-      <div class="fg"><label class="fl">Tipo de Servicio *</label><select class="fs" id="lg-stype"><option value="">Seleccionar primero un activo...</option></select></div>
+      <div class="fg"><label class="fl">Tipo de Servicio *</label><select class="fs" id="lg-stype" onchange="onLogStype()"><option value="">Seleccionar primero un activo...</option></select></div>
       <div class="fr">
         <div class="fg"><label class="fl">Fecha *</label><input class="fi" id="lg-date" type="date"></div>
         <div class="fg" id="lg-km-g" style="display:none"><label class="fl">Kilometraje al Servicio</label><input class="fi" id="lg-km" type="number" placeholder="85000"></div>
@@ -592,10 +592,10 @@ async function loadAll() {
       SB.query('service_types',{ select: '*', order: 'created_at.asc' }),
       SB.query('service_logs', { select: '*', order: 'date.desc' }),
     ]);
-    db.assetTypes   = atypes  || [];
-    db.assets       = assets  || [];
-    db.serviceTypes = stypes  || [];
-    db.logs         = logs    || [];
+    db.assetTypes   = (atypes  || []).map(fromDbAt);
+    db.assets       = (assets  || []).map(fromDbAsset);
+    db.serviceTypes = (stypes  || []).map(fromDbSt);
+    db.logs         = (logs    || []).map(fromDbLog);
     sel = db.assets.length ? db.assets[0].id : null;
     setSyncStatus('ok');
     setLoading(false);
@@ -911,12 +911,52 @@ function openLogModal(preAid,preStId,editLogId){
   ['lg-id','lg-km','lg-cost','lg-ws','lg-notes'].forEach(i=>document.getElementById(i).value='');
   document.getElementById('lg-date').value=today(); document.getElementById('lg-dz').style.display='none'; document.getElementById('lg-save-btn').dataset.label='Guardar';
   const asel=document.getElementById('lg-asset'); asel.innerHTML='<option value="">Seleccionar activo...</option>'; db.assets.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;asel.appendChild(o);});
-  if(editLogId){ const l=db.logs.find(x=>x.id===editLogId);if(!l)return; document.getElementById('ml-ttl').textContent='Editar Registro'; document.getElementById('lg-id').value=l.id; document.getElementById('lg-date').value=l.date||today(); document.getElementById('lg-km').value=l.km||''; document.getElementById('lg-cost').value=l.cost||''; document.getElementById('lg-ws').value=l.ws||''; document.getElementById('lg-notes').value=l.notes||''; asel.value=l.assetId; onLogAsset(); document.getElementById('lg-stype').value=l.stId||''; const a=db.assets.find(x=>x.id===l.assetId); const at=a?getAssetType(a.type):null; if(at&&at.useKm)document.getElementById('lg-km-g').style.display='block'; document.getElementById('lg-dz').style.display='flex'; }
-  else{ document.getElementById('ml-ttl').textContent='Registrar Servicio'; if(preAid){asel.value=preAid;onLogAsset();} if(preStId)document.getElementById('lg-stype').value=preStId; const a=db.assets.find(x=>x.id===preAid); const at=a?getAssetType(a.type):null; if(at&&at.useKm){document.getElementById('lg-km-g').style.display='block';document.getElementById('lg-km').value=a.km||'';}else document.getElementById('lg-km-g').style.display='none'; }
+  if(editLogId){
+    const l=db.logs.find(x=>x.id===editLogId);if(!l)return;
+    document.getElementById('ml-ttl').textContent='Editar Registro';
+    document.getElementById('lg-id').value=l.id;
+    document.getElementById('lg-date').value=l.date||today();
+    document.getElementById('lg-km').value=l.km||'';
+    document.getElementById('lg-cost').value=l.cost||'';
+    document.getElementById('lg-ws').value=l.ws||'';
+    document.getElementById('lg-notes').value=l.notes||'';
+    asel.value=l.assetId; onLogAsset();
+    document.getElementById('lg-stype').value=l.stId||''; onLogStype();
+    document.getElementById('lg-dz').style.display='flex';
+  } else {
+    document.getElementById('ml-ttl').textContent='Registrar Servicio';
+    if(preAid){ asel.value=preAid; onLogAsset(); }
+    if(preStId){ document.getElementById('lg-stype').value=preStId; onLogStype(); }
+  }
   document.getElementById('modal-log').classList.add('open');
 }
 
-function onLogAsset(){ const aid=document.getElementById('lg-asset').value; const a=db.assets.find(x=>x.id===aid); const at=a?getAssetType(a.type):null; const sts=db.serviceTypes.filter(s=>s.assetId===aid); const sel2=document.getElementById('lg-stype'); sel2.innerHTML='<option value="">Seleccionar servicio...</option>'; sts.forEach(st=>{const o=document.createElement('option');o.value=st.id;o.textContent=st.name;sel2.appendChild(o);}); document.getElementById('lg-km-g').style.display=(at&&at.useKm)?'block':'none'; if(at&&at.useKm)document.getElementById('lg-km').value=a.km||''; }
+function onLogAsset(){
+  const aid=document.getElementById('lg-asset').value;
+  const a=db.assets.find(x=>x.id===aid);
+  const at=a?getAssetType(a.type):null;
+  const sts=db.serviceTypes.filter(s=>s.assetId===aid);
+  const sel2=document.getElementById('lg-stype');
+  sel2.innerHTML='<option value="">Seleccionar servicio...</option>';
+  sts.forEach(st=>{const o=document.createElement('option');o.value=st.id;o.textContent=st.name;sel2.appendChild(o);});
+  // km field hidden until a service type is selected
+  document.getElementById('lg-km-g').style.display='none';
+  // If asset uses km AND there's only one service type, pre-select it
+  if(sts.length===1){ sel2.value=sts[0].id; onLogStype(); }
+}
+
+function onLogStype(){
+  const aid=document.getElementById('lg-asset').value;
+  const stId=document.getElementById('lg-stype').value;
+  const a=db.assets.find(x=>x.id===aid);
+  const at=a?getAssetType(a.type):null;
+  const st=db.serviceTypes.find(x=>x.id===stId);
+  // Show km field if the asset supports km AND this service type uses km
+  const needsKm=at&&at.useKm&&st&&(st.trigger==='km'||st.trigger==='both');
+  const kmGroup=document.getElementById('lg-km-g');
+  kmGroup.style.display=needsKm?'block':'none';
+  if(needsKm&&a&&a.km) document.getElementById('lg-km').value=a.km;
+}
 
 async function saveLog(){ const aid=document.getElementById('lg-asset').value; const stId=document.getElementById('lg-stype').value; const date=document.getElementById('lg-date').value; if(!aid){toast('⚠ Selecciona un activo');return;} if(!stId){toast('⚠ Selecciona el tipo de servicio');return;} if(!date){toast('⚠ La fecha es obligatoria');return;} const editId=document.getElementById('lg-id').value; const kmVal=parseFloat(document.getElementById('lg-km').value)||null; const log={id:editId||uid(),assetId:aid,stId,date,km:kmVal,cost:parseFloat(document.getElementById('lg-cost').value)||null,ws:document.getElementById('lg-ws').value.trim()||null,notes:document.getElementById('lg-notes').value.trim()||null,createdAt:editId?(db.logs.find(l=>l.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString()}; setBtn('lg-save-btn',true); setSyncStatus('syncing'); try{ if(editId){await SB.update('service_logs',editId,toDbLog(log));const i=db.logs.findIndex(l=>l.id===editId);if(i>-1)db.logs[i]=log;toast('✓ Registro actualizado');}else{await SB.insert('service_logs',toDbLog(log));db.logs.push(log);toast('✓ Servicio registrado');} if(kmVal){const a=db.assets.find(x=>x.id===aid);if(a&&(!a.km||kmVal>a.km)){await SB.update('assets',aid,{km:kmVal,km_date:date});a.km=kmVal;a.kmDate=date;}} setSyncStatus('ok');closeModal('modal-log');render(); }catch(e){setSyncStatus('error');toast('⚠ Error: '+e.message);} setBtn('lg-save-btn',false); }
 
