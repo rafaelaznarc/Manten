@@ -834,24 +834,37 @@ render();
   const KEY_SB = 'sb_publishable_4rCKHQPgXm8NDWFJIai2WA_Tp5R6s14'; 
   const supabaseClient = supabase.createClient(URL_SB, KEY_SB);
 
-  async function cargarDatosIniciales() {
-  const { data, error } = await supabaseClient.from('activos').select('*');
+ async function cargarDatosIniciales() {
+  console.log("🔍 Iniciando descarga desde Supabase...");
   
-  if (!error && data.length > 0) {
-    db.assets = data;
-    
-    // Si no hay nada seleccionado, tomamos el primer ID de la nube
-    if(!sel) sel = data[0].id;
-    
-    // ESTA LÍNEA ES LA QUE DIBUJA LA TABLA DEL MEDIO
-    render(); 
-    
-    console.log("🚀 Datos cargados y renderizados");
+  try {
+    const { data, error } = await supabaseClient
+      .from('activos')
+      .select('*');
+
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      // 1. Forzamos la actualización del array específico
+      db.assets = data; 
+      
+      // 2. Nos aseguramos de tener un ID seleccionado
+      if (!sel) sel = data[0].id;
+
+      // 3. LIMPIEZA Y REDIBUJO TOTAL
+      // Intentamos llamar a render, pero también a las sub-funciones por si acaso
+      if (typeof render === 'function') {
+        render(); 
+      }
+      
+      console.log("🚀 Interfaz forzada con", data.length, "activos");
+    } else {
+      console.log("∅ No hay datos en la tabla 'activos' de Supabase");
+    }
+  } catch (err) {
+    console.error("❌ Error crítico al cargar:", err);
   }
 }
-
-// Esta línea le dice al navegador que ejecute la función al abrir la página
-document.addEventListener('DOMContentLoaded', cargarDatosIniciales);
 </script>
 </body>
 </html>
