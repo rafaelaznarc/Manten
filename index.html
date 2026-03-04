@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Manten. — Sistema de Activos</title>
 <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg:#f5f5f7; --surface:#fff; --surface2:#f5f5f7;
@@ -38,11 +37,15 @@
   .p-grn{background:#f0fff4;color:#1a7f3c} .p-grn .d{background:var(--green);animation:br 2.5s ease-in-out infinite}
   @keyframes br{0%,100%{opacity:1}50%{opacity:.4}}
   .nav-acts{display:flex;gap:8px;flex-shrink:0}
+  .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;transition:background .3s}
+  .sync-dot.syncing{background:var(--orange);animation:br 0.8s infinite}
+  .sync-dot.error{background:var(--red)}
 
   /* BUTTONS */
   .btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:980px;cursor:pointer;font-family:var(--font);font-weight:600;transition:all .15s;white-space:nowrap}
   .btn-blue{background:var(--accent);color:#fff;padding:7px 16px;font-size:13px}
   .btn-blue:hover{background:var(--accent-hov)}
+  .btn-blue:disabled{opacity:.5;cursor:not-allowed}
   .btn-gray{background:#e8e8ed;color:var(--text-2);padding:7px 16px;font-size:13px}
   .btn-gray:hover{background:#dddde2}
   .btn-sm{padding:5px 14px;font-size:12px}
@@ -52,6 +55,30 @@
   .btn-del:hover{background:var(--red);color:#fff}
   .ico-btn{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border-lt);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:background .15s;color:var(--text-3);flex-shrink:0}
   .ico-btn:hover{background:var(--border-lt)}
+
+  /* LOADING SCREEN */
+  .loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9000}
+  .loading-screen.hidden{display:none}
+  .loading-logo{font-size:28px;font-weight:800;color:var(--text);letter-spacing:-.5px}
+  .loading-logo span{color:var(--accent)}
+  .loading-bar{width:180px;height:3px;background:var(--border-lt);border-radius:99px;overflow:hidden}
+  .loading-fill{height:100%;background:var(--accent);border-radius:99px;animation:lf 1.4s ease-in-out infinite}
+  @keyframes lf{0%{width:0%;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0%;margin-left:100%}}
+  .loading-msg{font-size:12px;color:var(--text-3);font-weight:500}
+
+  /* CONFIG SCREEN */
+  .cfg-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;z-index:8000}
+  .cfg-screen.hidden{display:none}
+  .cfg-card{background:var(--surface);border:1px solid var(--border-lt);border-radius:18px;padding:40px;max-width:480px;width:100%;box-shadow:var(--s3)}
+  .cfg-icon{font-size:40px;margin-bottom:12px}
+  .cfg-title{font-size:22px;font-weight:700;letter-spacing:-.3px;margin-bottom:8px}
+  .cfg-sub{font-size:14px;color:var(--text-3);line-height:1.6;margin-bottom:28px}
+  .cfg-fields{display:flex;flex-direction:column;gap:14px}
+  .cfg-label{font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:4px;display:block}
+  .cfg-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:11px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .15s}
+  .cfg-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,113,227,.12);background:#fff}
+  .cfg-hint{font-size:11px;color:var(--text-3);margin-top:4px;line-height:1.5}
+  .cfg-err{font-size:12px;color:var(--red);margin-top:8px;display:none}
 
   /* LAYOUT */
   .sum-wrap{max-width:1200px;margin:0 auto;padding:24px 24px 0}
@@ -75,17 +102,18 @@
   .abt:hover{background:var(--surface2)}
   .abt.active{background:#e8f0fd}
   .abt.active .abn{color:var(--accent);font-weight:700}
-  .ab-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-  .ic-car{background:#e8f0fd} .ic-ac{background:#e8f9f0} .ic-wtr{background:#e8f4fd}
+  .ab-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:var(--surface2)}
   .ab-inf{flex:1;min-width:0}
   .abn{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
   .abs{font-size:11px;color:var(--text-3);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
   .sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
   .d-ok{background:var(--green)} .d-warn{background:var(--orange)} .d-due{background:var(--red);animation:bl 1.5s infinite}
   @keyframes bl{0%,100%{opacity:1}50%{opacity:.4}}
-  .sb-foot{border-top:1px solid var(--border-lt);padding:12px}
+  .sb-foot{border-top:1px solid var(--border-lt);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
   .sb-add{width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:var(--rs);background:transparent;border:1.5px dashed var(--border);color:var(--text-3);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
   .sb-add:hover{border-color:var(--accent);color:var(--accent);background:#f0f5ff}
+  .sb-cfg{width:100%;display:flex;align-items:center;justify-content:center;gap:5px;padding:6px;border-radius:var(--rs);background:transparent;border:none;color:var(--text-4);font-family:var(--font);font-size:11px;font-weight:600;cursor:pointer;transition:color .15s}
+  .sb-cfg:hover{color:var(--text-3)}
 
   /* CONTENT */
   .content{display:flex;flex-direction:column;gap:16px}
@@ -134,7 +162,6 @@
   .td.hi{color:var(--text);font-weight:600}
   .td.warn{color:var(--orange);font-weight:600}
   .td.alert{color:var(--red);font-weight:700}
-  .td.ok{color:var(--green);font-weight:600}
   .mw{display:flex;align-items:center;gap:8px}
   .mb{flex:1;height:4px;background:var(--border-lt);border-radius:99px;overflow:hidden}
   .mf{height:100%;border-radius:99px;transition:width .5s ease}
@@ -184,6 +211,39 @@
   .lcost{font-size:12px;color:var(--text-2);font-weight:600;min-width:70px;text-align:right}
   .lact{display:flex;gap:4px}
 
+  /* ASSET TYPES MANAGER */
+  .at-grid{display:flex;flex-direction:column;gap:8px;padding:4px 0}
+  .at-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface2);border:1px solid var(--border-lt);border-radius:var(--rs);cursor:pointer;transition:all .15s}
+  .at-row:hover{border-color:var(--border);background:#fff}
+  .at-emoji{width:36px;height:36px;border-radius:8px;background:#fff;border:1px solid var(--border-lt);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .at-info{flex:1;min-width:0}
+  .at-name{font-size:14px;font-weight:600;color:var(--text)}
+  .at-meta{font-size:11px;color:var(--text-3);margin-top:2px}
+  .at-tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700;margin-right:4px}
+  .tag-km{background:#e8f0fd;color:#0051a8}
+  .tag-loc{background:#e8f9f0;color:#1a6e33}
+  .tag-builtin{background:var(--surface2);color:var(--text-4);border:1px solid var(--border-lt)}
+  .at-add-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border:1.5px dashed var(--border);border-radius:var(--rs);color:var(--text-3);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;background:transparent;width:100%}
+  .at-add-btn:hover{border-color:var(--accent);color:var(--accent);background:#f0f5ff}
+
+  /* EMOJI */
+  .emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;max-height:160px;overflow-y:auto;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs)}
+  .emoji-opt{font-size:20px;padding:6px;border-radius:6px;cursor:pointer;text-align:center;border:none;background:transparent;transition:background .1s}
+  .emoji-opt:hover{background:var(--border-lt)}
+  .emoji-opt.picked{background:#e8f0fd;outline:2px solid var(--accent)}
+  .emoji-preview{font-size:28px;width:44px;height:44px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+  /* TOGGLE */
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0}
+  .toggle-lbl{font-size:13px;font-weight:600;color:var(--text)}
+  .toggle-sub{font-size:11px;color:var(--text-3);margin-top:2px}
+  .toggle{position:relative;width:44px;height:26px;flex-shrink:0}
+  .toggle input{opacity:0;width:0;height:0;position:absolute}
+  .toggle-track{position:absolute;inset:0;background:var(--border);border-radius:99px;cursor:pointer;transition:background .2s}
+  .toggle-thumb{position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .toggle input:checked+.toggle-track{background:var(--accent)}
+  .toggle input:checked~.toggle-thumb{transform:translateX(18px)}
+
   /* EMPTY */
   .empty-state{background:var(--surface);border:1px solid var(--border-lt);border-radius:var(--r);padding:64px 40px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;box-shadow:var(--s1)}
   .ei{font-size:52px;margin-bottom:4px}
@@ -196,6 +256,7 @@
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .2s}
   .overlay.open{opacity:1;pointer-events:all}
   .modal{background:var(--surface);border-radius:18px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:var(--s3);transform:translateY(12px) scale(.98);transition:transform .22s cubic-bezier(.34,1.2,.64,1)}
+  .modal.wide{max-width:580px}
   .overlay.open .modal{transform:translateY(0) scale(1)}
   .m-hdr{padding:24px 24px 0;display:flex;align-items:center;justify-content:space-between}
   .m-ttl{font-size:20px;font-weight:700;letter-spacing:-.3px}
@@ -214,9 +275,9 @@
   .fs{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
   .fta{resize:vertical;min-height:72px}
   .fh{font-size:11px;color:var(--text-3);margin-top:2px}
-  .cond{display:none} .cond.show{display:flex}
   .dz{background:#fff5f5;border:1px solid #ffd7d5;border-radius:var(--rs);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
   .dzt{font-size:12px;color:#c0392b;font-weight:500}
+  .divider{height:1px;background:var(--border-lt);margin:4px 0}
 
   /* SEGMENT */
   .seg{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:var(--rs);padding:3px;gap:2px}
@@ -239,7 +300,38 @@
 </head>
 <body>
 
-<nav class="navbar">
+<!-- LOADING -->
+<div class="loading-screen" id="loading-screen">
+  <div class="loading-logo">Manten<span>.</span></div>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+  <div class="loading-msg" id="loading-msg">Conectando con Supabase...</div>
+</div>
+
+<!-- CONFIG (first-time setup) -->
+<div class="cfg-screen hidden" id="cfg-screen">
+  <div class="cfg-card">
+    <div class="cfg-icon">🔧</div>
+    <div class="cfg-title">Configurar Manten.</div>
+    <div class="cfg-sub">Para sincronizar tus datos necesitas conectar tu proyecto de Supabase. Solo lo harás una vez — se guarda en el navegador.</div>
+    <div class="cfg-fields">
+      <div>
+        <label class="cfg-label">Supabase URL</label>
+        <input class="cfg-input" id="cfg-url" placeholder="https://xxxxxxxxxxxx.supabase.co">
+        <div class="cfg-hint">Supabase → Settings → API → Project URL</div>
+      </div>
+      <div>
+        <label class="cfg-label">Anon / Public Key</label>
+        <input class="cfg-input" id="cfg-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        <div class="cfg-hint">Supabase → Settings → API → anon public key</div>
+      </div>
+      <div class="cfg-err" id="cfg-err">No se pudo conectar. Verifica la URL y la key.</div>
+      <button class="btn btn-blue" id="cfg-btn" onclick="saveConfig()" style="width:100%;justify-content:center;margin-top:8px">Conectar y continuar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="navbar" id="main-nav" style="display:none">
   <div class="nav-inner">
     <div class="nav-logo">Manten<span>.</span></div>
     <div class="nav-div"></div>
@@ -250,104 +342,128 @@
       <div class="pill p-grn"><div class="d"></div><span class="n" id="hc">0</span><span>activos</span></div>
     </div>
     <div class="nav-acts">
+      <div class="sync-dot" id="sync-dot" title="Estado de sincronización"></div>
       <button class="btn btn-gray btn-sm" onclick="openAssetModal()">＋ Nuevo Activo</button>
       <button class="btn btn-blue btn-sm" onclick="openLogModal()">✎ Registrar Servicio</button>
     </div>
   </div>
 </nav>
 
-<div class="sum-wrap">
-  <div class="sum-strip">
-    <div class="sc"><div class="sl">Total Activos</div><div class="sv blue" id="st">0</div><div class="ss" id="sd">—</div></div>
-    <div class="sc"><div class="sl">Servicios Vencidos</div><div class="sv red" id="sv">0</div><div class="ss">requieren atención</div></div>
-    <div class="sc"><div class="sl">Próximos 30 días</div><div class="sv ora" id="sp">0</div><div class="ss">servicios por vencer</div></div>
-    <div class="sc"><div class="sl">Último Servicio</div><div class="sv" id="sl" style="font-size:20px;letter-spacing:-.3px">—</div><div class="ss" id="sld">sin registros aún</div></div>
+<div id="main-body" style="display:none">
+  <div class="sum-wrap">
+    <div class="sum-strip">
+      <div class="sc"><div class="sl">Total Activos</div><div class="sv blue" id="st">0</div><div class="ss" id="sd">—</div></div>
+      <div class="sc"><div class="sl">Servicios Vencidos</div><div class="sv red" id="sv">0</div><div class="ss">requieren atención</div></div>
+      <div class="sc"><div class="sl">Próximos 30 días</div><div class="sv ora" id="sp">0</div><div class="ss">servicios por vencer</div></div>
+      <div class="sc"><div class="sl">Último Servicio</div><div class="sv" id="sl" style="font-size:20px;letter-spacing:-.3px">—</div><div class="ss" id="sld">sin registros aún</div></div>
+    </div>
+  </div>
+  <div class="page">
+    <aside class="sidebar">
+      <div id="sidebar"></div>
+      <div class="sb-foot">
+        <button class="sb-add" onclick="openAssetModal()">＋ Agregar Activo</button>
+        <button class="sb-cfg" onclick="openAssetTypesModal()">⚙ Gestionar tipos de activo</button>
+      </div>
+    </aside>
+    <div class="content" id="content"></div>
   </div>
 </div>
 
-<div class="page">
-  <aside class="sidebar">
-    <div id="sidebar"></div>
-    <div class="sb-foot"><button class="sb-add" onclick="openAssetModal()">＋ Agregar Activo</button></div>
-  </aside>
-  <div class="content" id="content"></div>
-</div>
-
-<!-- MODAL: ACTIVO -->
+<!-- ══ MODAL: ACTIVO ══ -->
 <div class="overlay" id="modal-asset">
   <div class="modal">
     <div class="m-hdr"><div class="m-ttl" id="ma-ttl">Nuevo Activo</div><button class="m-close" onclick="closeModal('modal-asset')">✕</button></div>
     <div class="m-body">
       <input type="hidden" id="f-id">
-      <div class="fr"><div class="fg full"><label class="fl">Nombre *</label><input class="fi" id="f-name" placeholder="Ej: Honda CRV, Aire Sala..."></div></div>
+      <div class="fr"><div class="fg full"><label class="fl">Nombre *</label><input class="fi" id="f-name" placeholder="Ej: Honda CRV, Lavadora Samsung..."></div></div>
       <div class="fr">
-        <div class="fg"><label class="fl">Tipo *</label>
-          <select class="fs" id="f-type" onchange="onTypeChange()">
-            <option value="">Seleccionar...</option>
-            <option value="car">🚗 Vehículo</option>
-            <option value="ac">❄️ Aire Acondicionado</option>
-            <option value="water">💧 Filtro de Agua</option>
-          </select>
+        <div class="fg"><label class="fl">Tipo de Activo *</label>
+          <select class="fs" id="f-type" onchange="onTypeChange()"><option value="">Seleccionar...</option></select>
         </div>
         <div class="fg"><label class="fl">Marca / Modelo</label><input class="fi" id="f-model" placeholder="Toyota Corolla"></div>
       </div>
       <div class="fr">
         <div class="fg"><label class="fl">Año</label><input class="fi" id="f-year" type="number" placeholder="2022"></div>
-        <div class="fg cond" id="c-plate"><label class="fl">Placa</label><input class="fi" id="f-plate" placeholder="AAA-1234"></div>
-        <div class="fg cond" id="c-loc"><label class="fl">Ubicación</label><input class="fi" id="f-loc" placeholder="Sala, Cuarto..."></div>
+        <div class="fg" id="c-plate" style="display:none"><label class="fl">Placa</label><input class="fi" id="f-plate" placeholder="AAA-1234"></div>
+        <div class="fg" id="c-loc" style="display:none"><label class="fl">Ubicación</label><input class="fi" id="f-loc" placeholder="Sala, Piso 2..."></div>
       </div>
-      <div class="fr cond" id="c-km">
+      <div class="fr" id="c-km" style="display:none">
         <div class="fg"><label class="fl">Kilometraje Actual</label><input class="fi" id="f-km" type="number" placeholder="85000"></div>
         <div class="fg"><label class="fl">Fecha de Lectura</label><input class="fi" id="f-km-date" type="date"></div>
       </div>
       <div class="fg"><label class="fl">Notas</label><textarea class="fta" id="f-notes" placeholder="Observaciones..."></textarea></div>
       <div class="dz" id="danger-zone" style="display:none"><span class="dzt">⚠ Eliminar borrará el activo y todo su historial.</span><button class="btn-del" onclick="deleteAsset()">Eliminar</button></div>
     </div>
-    <div class="m-foot"><button class="btn btn-gray" onclick="closeModal('modal-asset')">Cancelar</button><button class="btn btn-blue" onclick="saveAsset()">Guardar</button></div>
+    <div class="m-foot"><button class="btn btn-gray" onclick="closeModal('modal-asset')">Cancelar</button><button class="btn btn-blue" id="asset-save-btn" onclick="saveAsset()">Guardar</button></div>
   </div>
 </div>
 
-<!-- MODAL: TIPO DE SERVICIO -->
+<!-- ══ MODAL: TIPOS DE ACTIVO ══ -->
+<div class="overlay" id="modal-at-list">
+  <div class="modal wide">
+    <div class="m-hdr"><div class="m-ttl">Tipos de Activo</div><button class="m-close" onclick="closeModal('modal-at-list')">✕</button></div>
+    <p class="m-sub">Configura las categorías de activos que puedes registrar.</p>
+    <div class="m-body"><div id="at-list-body" class="at-grid"></div></div>
+    <div class="m-foot"><button class="btn btn-gray" onclick="closeModal('modal-at-list')">Cerrar</button></div>
+  </div>
+</div>
+
+<!-- ══ MODAL: EDITAR TIPO DE ACTIVO ══ -->
+<div class="overlay" id="modal-at-edit">
+  <div class="modal">
+    <div class="m-hdr"><div class="m-ttl" id="ate-ttl">Nuevo Tipo de Activo</div><button class="m-close" onclick="closeModal('modal-at-edit')">✕</button></div>
+    <div class="m-body">
+      <input type="hidden" id="ate-id">
+      <div style="display:flex;gap:12px;align-items:flex-end">
+        <div class="fg" style="flex-shrink:0"><label class="fl">Ícono</label><div class="emoji-preview" id="ate-preview">🔧</div></div>
+        <div class="fg" style="flex:1"><label class="fl">Nombre del Tipo *</label><input class="fi" id="ate-name" placeholder="Ej: Lavadora, Generador..."></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Seleccionar Emoji</label>
+        <div class="emoji-grid" id="ate-emoji-grid"></div>
+        <span class="fh">O escribe directamente: <input class="fi" id="ate-emoji-custom" placeholder="✏️" style="width:80px;display:inline-block;margin-left:6px;padding:4px 8px;font-size:18px"></span>
+      </div>
+      <div class="fg"><label class="fl">Categoría</label><input class="fi" id="ate-cat" placeholder="Ej: Electrodomésticos, Vehículos..."><span class="fh">Activos del mismo tipo se agrupan por categoría.</span></div>
+      <div class="divider"></div>
+      <div class="toggle-row"><div><div class="toggle-lbl">Usa Odómetro / Kilometraje</div><div class="toggle-sub">Para vehículos con kilometraje</div></div><label class="toggle"><input type="checkbox" id="ate-km"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      <div class="toggle-row"><div><div class="toggle-lbl">Usa Placa de Identificación</div><div class="toggle-sub">Para vehículos con placa</div></div><label class="toggle"><input type="checkbox" id="ate-plate"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      <div class="toggle-row"><div><div class="toggle-lbl">Usa Campo de Ubicación</div><div class="toggle-sub">Para equipos fijos (sala, cuarto...)</div></div><label class="toggle"><input type="checkbox" id="ate-loc"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      <div class="divider"></div>
+      <div class="dz" id="ate-dz" style="display:none"><span class="dzt">⚠ No se puede eliminar si tiene activos registrados.</span><button class="btn-del" onclick="deleteAssetType()">Eliminar</button></div>
+    </div>
+    <div class="m-foot"><button class="btn btn-gray" onclick="closeModal('modal-at-edit')">Cancelar</button><button class="btn btn-blue" id="ate-save-btn" onclick="saveAssetType()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- ══ MODAL: TIPO DE SERVICIO ══ -->
 <div class="overlay" id="modal-stype">
   <div class="modal">
     <div class="m-hdr"><div class="m-ttl" id="mst-ttl">Tipo de Servicio</div><button class="m-close" onclick="closeModal('modal-stype')">✕</button></div>
     <div class="m-sub" id="mst-asset"></div>
     <div class="m-body">
       <input type="hidden" id="st-id"><input type="hidden" id="st-aid">
-      <div class="fg"><label class="fl">Nombre del Servicio *</label><input class="fi" id="st-name" placeholder="Ej: Cambio de Aceite, Limpieza de Filtros..."></div>
-      <div class="fg">
-        <label class="fl">Tipo de Intervalo *</label>
-        <div class="seg">
-          <button class="seg-b active" id="seg-km"   onclick="setTrig('km')">Por Kilómetros</button>
-          <button class="seg-b"        id="seg-time" onclick="setTrig('time')">Por Tiempo</button>
-          <button class="seg-b"        id="seg-both" onclick="setTrig('both')">Ambos</button>
-        </div>
+      <div class="fg"><label class="fl">Nombre del Servicio *</label><input class="fi" id="st-name" placeholder="Ej: Cambio de Aceite, Limpieza..."></div>
+      <div class="fg"><label class="fl">Tipo de Intervalo *</label>
+        <div class="seg"><button class="seg-b active" id="seg-km" onclick="setTrig('km')">Por Kilómetros</button><button class="seg-b" id="seg-time" onclick="setTrig('time')">Por Tiempo</button><button class="seg-b" id="seg-both" onclick="setTrig('both')">Ambos</button></div>
       </div>
-      <div class="fr" id="st-km-row">
-        <div class="fg"><label class="fl">Cada cuántos km</label><input class="fi" id="st-km" type="number" placeholder="5000"><span class="fh">Ej: 5000 para cada 5,000 km</span></div>
-      </div>
-      <div class="fr" id="st-day-row" style="display:none">
-        <div class="fg"><label class="fl">Cada cuántos días</label><input class="fi" id="st-days" type="number" placeholder="90"><span class="fh">90 = 3 meses · 180 = 6 meses · 365 = anual</span></div>
-      </div>
+      <div class="fr" id="st-km-row"><div class="fg"><label class="fl">Cada cuántos km</label><input class="fi" id="st-km" type="number" placeholder="5000"><span class="fh">Ej: 5000 para cada 5,000 km</span></div></div>
+      <div class="fr" id="st-day-row" style="display:none"><div class="fg"><label class="fl">Cada cuántos días</label><input class="fi" id="st-days" type="number" placeholder="90"><span class="fh">90 = 3 meses · 180 = 6 meses · 365 = anual</span></div></div>
       <div class="fg"><label class="fl">Notas</label><input class="fi" id="st-notes" placeholder="Ej: Aceite 5W-30, filtro original..."></div>
       <div class="dz" id="st-dz" style="display:none"><span class="dzt">⚠ Eliminar borrará este tipo y sus registros.</span><button class="btn-del" onclick="deleteServiceType()">Eliminar</button></div>
     </div>
-    <div class="m-foot"><button class="btn btn-gray" onclick="closeModal('modal-stype')">Cancelar</button><button class="btn btn-blue" onclick="saveServiceType()">Guardar</button></div>
+    <div class="m-foot"><button class="btn btn-gray" onclick="closeModal('modal-stype')">Cancelar</button><button class="btn btn-blue" id="st-save-btn" onclick="saveServiceType()">Guardar</button></div>
   </div>
 </div>
 
-<!-- MODAL: REGISTRAR SERVICIO -->
+<!-- ══ MODAL: REGISTRAR SERVICIO ══ -->
 <div class="overlay" id="modal-log">
   <div class="modal">
     <div class="m-hdr"><div class="m-ttl" id="ml-ttl">Registrar Servicio</div><button class="m-close" onclick="closeModal('modal-log')">✕</button></div>
     <div class="m-body">
       <input type="hidden" id="lg-id">
-      <div class="fg"><label class="fl">Activo *</label>
-        <select class="fs" id="lg-asset" onchange="onLogAsset()"><option value="">Seleccionar activo...</option></select>
-      </div>
-      <div class="fg"><label class="fl">Tipo de Servicio *</label>
-        <select class="fs" id="lg-stype"><option value="">Seleccionar primero un activo...</option></select>
-      </div>
+      <div class="fg"><label class="fl">Activo *</label><select class="fs" id="lg-asset" onchange="onLogAsset()"><option value="">Seleccionar activo...</option></select></div>
+      <div class="fg"><label class="fl">Tipo de Servicio *</label><select class="fs" id="lg-stype"><option value="">Seleccionar primero un activo...</option></select></div>
       <div class="fr">
         <div class="fg"><label class="fl">Fecha *</label><input class="fi" id="lg-date" type="date"></div>
         <div class="fg" id="lg-km-g" style="display:none"><label class="fl">Kilometraje al Servicio</label><input class="fi" id="lg-km" type="number" placeholder="85000"></div>
@@ -359,511 +475,466 @@
       <div class="fg"><label class="fl">Notas</label><textarea class="fta" id="lg-notes" placeholder="Observaciones, repuestos..."></textarea></div>
       <div class="dz" id="lg-dz" style="display:none"><span class="dzt">⚠ Eliminar este registro de servicio.</span><button class="btn-del" onclick="deleteLog()">Eliminar</button></div>
     </div>
-    <div class="m-foot"><button class="btn btn-gray" onclick="closeModal('modal-log')">Cancelar</button><button class="btn btn-blue" onclick="saveLog()">Guardar</button></div>
+    <div class="m-foot"><button class="btn btn-gray" onclick="closeModal('modal-log')">Cancelar</button><button class="btn btn-blue" id="lg-save-btn" onclick="saveLog()">Guardar</button></div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── DATA ──
-const KEY='manten-v5';
-function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return{assets:[],serviceTypes:[],logs:[],odo:[]};}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){}}
-let db=load();
-if(!db.serviceTypes)db.serviceTypes=[];
-let sel=db.assets.length?db.assets[0].id:null;
+// ══════════════════════════════════════════
+//  SUPABASE CONFIG
+// ══════════════════════════════════════════
+const CFG_KEY = 'manten_supabase_cfg';
 
-// ── UTILS ──
-function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
-function icon(t){return t==='car'?'🚗':t==='ac'?'❄️':'💧';}
-function icls(t){return t==='car'?'ic-car':t==='ac'?'ic-ac':'ic-wtr';}
-function tname(t){return t==='car'?'Vehículo':t==='ac'?'Aire Acondicionado':'Filtro de Agua';}
-function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2800);}
-function today(){return new Date().toISOString().split('T')[0];}
-function fmtDate(d){if(!d)return'—';return new Date(d+'T12:00:00').toLocaleDateString('es-PA',{day:'numeric',month:'short',year:'numeric'});}
-function daysBetween(d1,d2){return Math.round((new Date(d2+'T12:00:00')-new Date(d1+'T12:00:00'))/86400000);}
-function addDays(ds,n){const d=new Date(ds+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().split('T')[0];}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function getConfig() {
+  try { return JSON.parse(localStorage.getItem(CFG_KEY)); } catch(e) { return null; }
+}
+function setConfig(url, key) {
+  localStorage.setItem(CFG_KEY, JSON.stringify({ url: url.replace(/\/$/, ''), key }));
+}
 
-// ── CALC STATUS ──
-function calcStatus(asset,st){
-  const logs=db.logs.filter(l=>l.assetId===asset.id&&l.stId===st.id).sort((a,b)=>b.date>a.date?1:-1);
-  const last=logs[0]||null;
-  const res={lastDate:null,lastKm:null,nextDate:null,nextKm:null,pctKm:null,pctTime:null,pct:0,status:'ok',daysLeft:null,kmLeft:null,neverDone:!last};
-  if(last){res.lastDate=last.date;res.lastKm=last.km||null;}
+// Minimal Supabase client (no SDK needed)
+let SB = null;
+
+function initSupabase(url, key) {
+  const headers = { 'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+  const base = url + '/rest/v1';
+
+  async function query(table, opts = {}) {
+    let url = base + '/' + table + '?';
+    if(opts.select)  url += 'select=' + opts.select + '&';
+    if(opts.filter)  url += opts.filter + '&';
+    if(opts.order)   url += 'order=' + opts.order + '&';
+    const res = await fetch(url, { headers });
+    if(!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  async function insert(table, data) {
+    const res = await fetch(base + '/' + table, {
+      method: 'POST', headers,
+      body: JSON.stringify(Array.isArray(data) ? data : [data])
+    });
+    if(!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  async function update(table, id, data) {
+    const res = await fetch(base + '/' + table + '?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH', headers,
+      body: JSON.stringify(data)
+    });
+    if(!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  async function remove(table, id) {
+    const res = await fetch(base + '/' + table + '?id=eq.' + encodeURIComponent(id), {
+      method: 'DELETE', headers
+    });
+    if(!res.ok) throw new Error(await res.text());
+    return true;
+  }
+
+  return { query, insert, update, remove };
+}
+
+// ══════════════════════════════════════════
+//  APP STATE
+// ══════════════════════════════════════════
+let db = { assetTypes:[], assets:[], serviceTypes:[], logs:[], odoLogs:[] };
+let sel = null;
+
+// ══════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════
+async function boot() {
+  const cfg = getConfig();
+  if(!cfg) {
+    setLoading(false);
+    document.getElementById('cfg-screen').classList.remove('hidden');
+    return;
+  }
+  SB = initSupabase(cfg.url, cfg.key);
+  await loadAll();
+}
+
+async function saveConfig() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  if(!url || !key) { toast('⚠ Completa los dos campos'); return; }
+
+  const btn = document.getElementById('cfg-btn');
+  btn.textContent = 'Conectando...'; btn.disabled = true;
+  document.getElementById('cfg-err').style.display = 'none';
+
+  try {
+    SB = initSupabase(url, key);
+    // Test connection
+    await SB.query('asset_types', { select: 'id', filter: 'limit=1' });
+    setConfig(url, key);
+    document.getElementById('cfg-screen').classList.add('hidden');
+    setLoading(true, 'Cargando datos...');
+    await loadAll();
+  } catch(e) {
+    document.getElementById('cfg-err').style.display = 'block';
+    btn.textContent = 'Conectar y continuar →'; btn.disabled = false;
+  }
+}
+
+async function loadAll() {
+  setLoading(true, 'Cargando tipos de activo...');
+  try {
+    const [atypes, assets, stypes, logs] = await Promise.all([
+      SB.query('asset_types',  { select: '*', order: 'created_at.asc' }),
+      SB.query('assets',       { select: '*', order: 'created_at.asc' }),
+      SB.query('service_types',{ select: '*', order: 'created_at.asc' }),
+      SB.query('service_logs', { select: '*', order: 'date.desc' }),
+    ]);
+    db.assetTypes   = atypes  || [];
+    db.assets       = assets  || [];
+    db.serviceTypes = stypes  || [];
+    db.logs         = logs    || [];
+    sel = db.assets.length ? db.assets[0].id : null;
+    setSyncStatus('ok');
+    setLoading(false);
+    showMain();
+    render();
+  } catch(e) {
+    setLoading(false, 'Error al cargar datos.');
+    setSyncStatus('error');
+    toast('⚠ Error conectando a Supabase: ' + e.message);
+  }
+}
+
+function setLoading(show, msg = 'Cargando...') {
+  const el = document.getElementById('loading-screen');
+  el.classList.toggle('hidden', !show);
+  if(msg) document.getElementById('loading-msg').textContent = msg;
+}
+
+function showMain() {
+  document.getElementById('main-nav').style.display = '';
+  document.getElementById('main-body').style.display = '';
+}
+
+function setSyncStatus(state) {
+  const dot = document.getElementById('sync-dot');
+  if(!dot) return;
+  dot.className = 'sync-dot' + (state==='syncing'?' syncing':state==='error'?' error':'');
+}
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function uid()      { return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function toast(m)   { const e=document.getElementById('toast'); e.textContent=m; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'),2800); }
+function today()    { return new Date().toISOString().split('T')[0]; }
+function fmtDate(d) { if(!d)return'—'; return new Date(d+'T12:00:00').toLocaleDateString('es-PA',{day:'numeric',month:'short',year:'numeric'}); }
+function daysBetween(d1,d2) { return Math.round((new Date(d2+'T12:00:00')-new Date(d1+'T12:00:00'))/86400000); }
+function addDays(ds,n) { const d=new Date(ds+'T12:00:00'); d.setDate(d.getDate()+n); return d.toISOString().split('T')[0]; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function setBtn(id, loading) { const b=document.getElementById(id); if(b){b.disabled=loading; b.textContent=loading?'Guardando...':b.dataset.label||'Guardar';} }
+
+function getAssetType(typeId) {
+  return db.assetTypes.find(t=>t.id===typeId) || { name:typeId, emoji:'📦', category:'Otros', use_km:false, use_plate:false, use_loc:false };
+}
+
+// DB key mapping: JS camelCase ↔ Supabase snake_case
+function toDbAsset(a)   { return { id:a.id, name:a.name, type:a.type, model:a.model||null, year:a.year||null, plate:a.plate||null, loc:a.loc||null, km:a.km||null, km_date:a.kmDate||null, notes:a.notes||null, created_at:a.createdAt||new Date().toISOString() }; }
+function fromDbAsset(r) { return { id:r.id, name:r.name, type:r.type, model:r.model, year:r.year, plate:r.plate, loc:r.loc, km:r.km, kmDate:r.km_date, notes:r.notes, createdAt:r.created_at }; }
+function toDbAt(at)     { return { id:at.id, name:at.name, emoji:at.emoji, category:at.category, use_km:!!at.useKm, use_plate:!!at.usePlate, use_loc:!!at.useLoc, builtin:!!at.builtin, created_at:at.createdAt||new Date().toISOString() }; }
+function fromDbAt(r)    { return { id:r.id, name:r.name, emoji:r.emoji, category:r.category, useKm:r.use_km, usePlate:r.use_plate, useLoc:r.use_loc, builtin:r.builtin, createdAt:r.created_at }; }
+function toDbSt(st)     { return { id:st.id, asset_id:st.assetId, name:st.name, trigger:st.trigger, km_interval:st.kmInterval||null, day_interval:st.dayInterval||null, notes:st.notes||null, created_at:st.createdAt||new Date().toISOString() }; }
+function fromDbSt(r)    { return { id:r.id, assetId:r.asset_id, name:r.name, trigger:r.trigger, kmInterval:r.km_interval, dayInterval:r.day_interval, notes:r.notes, createdAt:r.created_at }; }
+function toDbLog(l)     { return { id:l.id, asset_id:l.assetId, st_id:l.stId, date:l.date, km:l.km||null, cost:l.cost||null, workshop:l.workshop||l.ws||null, notes:l.notes||null, created_at:l.createdAt||new Date().toISOString() }; }
+function fromDbLog(r)   { return { id:r.id, assetId:r.asset_id, stId:r.st_id, date:r.date, km:r.km, cost:r.cost, ws:r.workshop, notes:r.notes, createdAt:r.created_at }; }
+
+// ══════════════════════════════════════════
+//  CALC STATUS
+// ══════════════════════════════════════════
+function calcStatus(asset, st) {
+  const logs = db.logs.filter(l=>l.assetId===asset.id&&l.stId===st.id).sort((a,b)=>b.date>a.date?1:-1);
+  const last  = logs[0]||null;
+  const res   = { lastDate:null,lastKm:null,nextDate:null,nextKm:null,pctKm:null,pctTime:null,pct:0,status:'ok',daysLeft:null,kmLeft:null,neverDone:!last };
+  if(last){ res.lastDate=last.date; res.lastKm=last.km||null; }
   if((st.trigger==='time'||st.trigger==='both')&&st.dayInterval&&last){
-    const nd=addDays(last.date,st.dayInterval);res.nextDate=nd;
+    const nd=addDays(last.date,st.dayInterval); res.nextDate=nd;
     res.pctTime=Math.round((daysBetween(last.date,today())/st.dayInterval)*100);
     res.daysLeft=daysBetween(today(),nd);
   }
   if((st.trigger==='km'||st.trigger==='both')&&st.kmInterval&&last&&last.km){
-    const nk=last.km+st.kmInterval;res.nextKm=nk;
+    const nk=last.km+st.kmInterval; res.nextKm=nk;
     const cur=asset.km||last.km;
     res.pctKm=Math.round(((cur-last.km)/st.kmInterval)*100);
     res.kmLeft=nk-cur;
   }
   const pcts=[res.pctKm,res.pctTime].filter(p=>p!==null);
   res.pct=pcts.length?Math.max(...pcts):0;
-  if(res.pct>=100)res.status='due';
-  else if(res.pct>=80)res.status='warn';
+  if(res.pct>=100) res.status='due';
+  else if(res.pct>=80) res.status='warn';
   return res;
 }
 
-function assetStatus(asset){
+function assetStatus(asset) {
   const sts=db.serviceTypes.filter(s=>s.assetId===asset.id);
-  if(!sts.length)return'ok';
+  if(!sts.length) return 'ok';
   let w='ok';
-  for(const st of sts){const s=calcStatus(asset,st).status;if(s==='due')return'due';if(s==='warn')w='warn';}
+  for(const st of sts){ const s=calcStatus(asset,st).status; if(s==='due') return 'due'; if(s==='warn') w='warn'; }
   return w;
 }
 
-// ── RENDER ──
-function render(){renderSummary();renderSidebar();renderContent();}
+// ══════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════
+function render() { renderSummary(); renderSidebar(); renderContent(); }
 
-function renderSummary(){
+function renderSummary() {
   const n=db.assets.length;
   document.getElementById('hc').textContent=n;
   document.getElementById('st').textContent=n;
-  const cars=db.assets.filter(a=>a.type==='car').length;
-  const acs=db.assets.filter(a=>a.type==='ac').length;
-  const water=db.assets.filter(a=>a.type==='water').length;
-  const parts=[];
-  if(cars)parts.push(cars+(cars===1?' vehículo':' vehículos'));
-  if(acs)parts.push(acs+(acs===1?' aire':' aires'));
-  if(water)parts.push(water+(water===1?' filtro':' filtros'));
-  document.getElementById('sd').textContent=parts.join(' · ')||'—';
+  const byType={};
+  db.assets.forEach(a=>{ const at=getAssetType(a.type); byType[at.category]=(byType[at.category]||0)+1; });
+  document.getElementById('sd').textContent=Object.entries(byType).map(([c,n])=>`${n} ${c.toLowerCase()}`).join(' · ')||'—';
   let venc=0,prox=0;
-  db.assets.forEach(a=>{
-    db.serviceTypes.filter(s=>s.assetId===a.id).forEach(st=>{
-      const s=calcStatus(a,st);
-      if(s.status==='due')venc++;
-      else if(s.status==='warn')prox++;
-      else if(!s.neverDone&&s.daysLeft!==null&&s.daysLeft<=30)prox++;
-    });
-  });
-  document.getElementById('sv').textContent=venc;
-  document.getElementById('sp').textContent=prox;
-  document.getElementById('hv').textContent=venc;
-  document.getElementById('hp').textContent=prox;
+  db.assets.forEach(a=>{ db.serviceTypes.filter(s=>s.assetId===a.id).forEach(st=>{ const s=calcStatus(a,st); if(s.status==='due')venc++; else if(s.status==='warn')prox++; else if(!s.neverDone&&s.daysLeft!==null&&s.daysLeft<=30)prox++; }); });
+  ['sv','hv'].forEach(i=>document.getElementById(i).textContent=venc);
+  ['sp','hp'].forEach(i=>document.getElementById(i).textContent=prox);
   const allLogs=db.logs.slice().sort((a,b)=>b.date>a.date?1:-1);
-  if(allLogs.length){
-    const l=allLogs[0];
-    const st=db.serviceTypes.find(x=>x.id===l.stId);
-    const a=db.assets.find(x=>x.id===l.assetId);
-    document.getElementById('sl').textContent=fmtDate(l.date);
-    document.getElementById('sld').textContent=(a?a.name:'')+(st?' — '+st.name:'');
-  }else{document.getElementById('sl').textContent='—';document.getElementById('sld').textContent='sin registros aún';}
+  if(allLogs.length){ const l=allLogs[0]; const st=db.serviceTypes.find(x=>x.id===l.stId); const a=db.assets.find(x=>x.id===l.assetId); document.getElementById('sl').textContent=fmtDate(l.date); document.getElementById('sld').textContent=(a?a.name:'')+(st?' — '+st.name:''); }
+  else{ document.getElementById('sl').textContent='—'; document.getElementById('sld').textContent='sin registros aún'; }
 }
 
-function renderSidebar(){
-  const groups=[{type:'car',label:'Vehículos'},{type:'ac',label:'Aires Acondicionados'},{type:'water',label:'Filtros de Agua'}];
+function renderSidebar() {
+  const categories={};
+  db.assets.forEach(a=>{ const at=getAssetType(a.type); const c=at.category||'Otros'; if(!categories[c])categories[c]=[]; categories[c].push(a); });
   let html='';
-  groups.forEach(g=>{
-    const items=db.assets.filter(a=>a.type===g.type);
-    if(!items.length)return;
-    html+=`<div class="sb-sec"><div class="sb-lbl">${g.label}</div><div class="sb-list">`;
-    items.forEach(a=>{
-      const sub=a.type==='car'?[a.year,a.plate].filter(Boolean).join(' · '):[a.model,a.loc].filter(Boolean).join(' · ')||tname(a.type);
-      const st=assetStatus(a);
-      const dc=st==='due'?'d-due':st==='warn'?'d-warn':'d-ok';
-      html+=`<button class="abt ${a.id===sel?'active':''}" onclick="selectAsset('${a.id}')">
-        <div class="ab-ico ${icls(a.type)}">${icon(a.type)}</div>
-        <div class="ab-inf"><span class="abn">${esc(a.name)}</span><span class="abs">${esc(sub)}</span></div>
-        <div class="sdot ${dc}"></div>
-      </button>`;
-    });
+  Object.entries(categories).forEach(([cat,assets])=>{
+    html+=`<div class="sb-sec"><div class="sb-lbl">${esc(cat)}</div><div class="sb-list">`;
+    assets.forEach(a=>{ const at=getAssetType(a.type); const sub=at.useKm?[a.year,a.plate].filter(Boolean).join(' · '):[a.model,a.loc].filter(Boolean).join(' · ')||at.name; const st=assetStatus(a); const dc=st==='due'?'d-due':st==='warn'?'d-warn':'d-ok'; html+=`<button class="abt ${a.id===sel?'active':''}" onclick="selectAsset('${a.id}')"><div class="ab-ico">${at.emoji}</div><div class="ab-inf"><span class="abn">${esc(a.name)}</span><span class="abs">${esc(sub)}</span></div><div class="sdot ${dc}"></div></button>`; });
     html+=`</div></div>`;
   });
-  if(!db.assets.length)html=`<div class="sb-sec"><p style="font-size:12px;color:var(--text-3);line-height:1.7;padding:4px 8px">Sin activos aún.<br>Haz clic en <strong>Agregar Activo</strong>.</p></div>`;
+  if(!db.assets.length) html=`<div class="sb-sec"><p style="font-size:12px;color:var(--text-3);line-height:1.7;padding:4px 8px">Sin activos aún.<br>Haz clic en <strong>Agregar Activo</strong>.</p></div>`;
   document.getElementById('sidebar').innerHTML=html;
 }
 
-function renderContent(){
+function renderContent() {
   const el=document.getElementById('content');
-  if(!db.assets.length){
-    el.innerHTML=`<div class="empty-state"><div class="ei">🔧</div><div class="et">Bienvenido a Manten.</div><div class="es">Comienza registrando tu primer activo — vehículo, aire acondicionado o filtro de agua.</div><button class="btn btn-blue" style="margin-top:12px" onclick="openAssetModal()">＋ Nuevo Activo</button></div>`;
-    return;
-  }
+  if(!db.assets.length){ el.innerHTML=`<div class="empty-state"><div class="ei">🔧</div><div class="et">Bienvenido a Manten.</div><div class="es">Comienza registrando tu primer activo. Puedes gestionar los tipos desde ⚙ en el menú lateral.</div><button class="btn btn-blue" style="margin-top:12px" onclick="openAssetModal()">＋ Nuevo Activo</button></div>`; return; }
   const asset=db.assets.find(a=>a.id===sel);
-  if(!asset){el.innerHTML=`<div class="no-sel"><div style="font-size:36px;opacity:.2">👈</div><p style="font-size:13px;color:var(--text-3)">Selecciona un activo</p></div>`;return;}
-
-  const subParts=[asset.year,asset.model,asset.plate?`Placa ${asset.plate}`:'',asset.loc||''].filter(Boolean);
+  if(!asset){ el.innerHTML=`<div class="no-sel"><div style="font-size:36px;opacity:.2">👈</div><p style="font-size:13px;color:var(--text-3)">Selecciona un activo</p></div>`; return; }
+  const at=getAssetType(asset.type);
+  const subParts=[asset.year,asset.model,at.usePlate&&asset.plate?`Placa ${asset.plate}`:'',at.useLoc&&asset.loc?asset.loc:''].filter(Boolean);
   const stypes=db.serviceTypes.filter(s=>s.assetId===asset.id);
   const astatus=assetStatus(asset);
   const assetLogs=db.logs.filter(l=>l.assetId===asset.id).slice().sort((a,b)=>b.date>a.date?1:-1);
-
-  // ── Hero stats ──
+  let minKmLeft=null,minDaysLeft=null;
+  stypes.forEach(st=>{ const s=calcStatus(asset,st); if(s.kmLeft!==null&&(minKmLeft===null||s.kmLeft<minKmLeft))minKmLeft=s.kmLeft; if(s.daysLeft!==null&&(minDaysLeft===null||s.daysLeft<minDaysLeft))minDaysLeft=s.daysLeft; });
   let statsH='';
-  if(asset.type==='car'){
+  if(at.useKm){
     const km=asset.km?Number(asset.km).toLocaleString('es'):'—';
-    let minKmLeft=null,minDaysLeft=null;
-    stypes.forEach(st=>{const s=calcStatus(asset,st);if(s.kmLeft!==null&&(minKmLeft===null||s.kmLeft<minKmLeft))minKmLeft=s.kmLeft;if(s.daysLeft!==null&&(minDaysLeft===null||s.daysLeft<minDaysLeft))minDaysLeft=s.daysLeft;});
-    const nkd=minKmLeft!==null?Number(Math.max(0,minKmLeft)).toLocaleString('es')+'<span>km</span>':'—';
+    const nkd=minKmLeft!==null?(minKmLeft<=0?'<span style="color:var(--red)">VENCIDO</span>':Number(Math.max(0,minKmLeft)).toLocaleString('es')+'<span>km</span>'):'—';
     const ndd=minDaysLeft!==null?(minDaysLeft<=0?'<span style="color:var(--red)">VENCIDO</span>':minDaysLeft+'<span>días</span>'):'—';
-    const kpct=minKmLeft!==null?Math.min(100,Math.max(0,(1-minKmLeft/5000)*100)):0;
-    const dpct=minDaysLeft!==null?Math.min(100,Math.max(0,(30-minDaysLeft)/30*100)):0;
-    statsH=`
-      <div class="stat"><div class="stat-lbl">Kilometraje</div><div class="stat-val">${km}</div><div class="sbar"><div class="sbf s-ok" style="width:40%"></div></div></div>
-      <div class="stat"><div class="stat-lbl">Próx. km</div><div class="stat-val">${nkd}</div><div class="sbar"><div class="sbf ${minKmLeft!==null&&minKmLeft<=500?'s-due':minKmLeft!==null&&minKmLeft<=1500?'s-warn':'s-ok'}" style="width:${kpct}%"></div></div></div>
-      <div class="stat"><div class="stat-lbl">Próx. días</div><div class="stat-val">${ndd}</div><div class="sbar"><div class="sbf ${minDaysLeft!==null&&minDaysLeft<=0?'s-due':minDaysLeft!==null&&minDaysLeft<=7?'s-warn':'s-ok'}" style="width:${dpct}%"></div></div></div>
-      <div class="stat"><div class="stat-lbl">Servicios</div><div class="stat-val">${assetLogs.length}<span>total</span></div><div class="sbar"><div class="sbf" style="width:${Math.min(100,assetLogs.length*10)}%"></div></div></div>`;
-  }else{
-    let minDaysLeft=null;
-    stypes.forEach(st=>{const s=calcStatus(asset,st);if(s.daysLeft!==null&&(minDaysLeft===null||s.daysLeft<minDaysLeft))minDaysLeft=s.daysLeft;});
-    const lastLog=assetLogs[0];
-    const ndd=minDaysLeft!==null?(minDaysLeft<=0?'<span style="color:var(--red)">VENCIDO</span>':minDaysLeft+'<span>días</span>'):'—';
-    statsH=`
-      <div class="stat"><div class="stat-lbl">Próx. Servicio</div><div class="stat-val">${ndd}</div><div class="sbar"><div class="sbf ${minDaysLeft!==null&&minDaysLeft<=0?'s-due':minDaysLeft!==null&&minDaysLeft<=7?'s-warn':'s-ok'}" style="width:${minDaysLeft!==null?Math.min(100,(30-minDaysLeft)/30*100):0}%"></div></div></div>
-      <div class="stat"><div class="stat-lbl">Último</div><div class="stat-val" style="font-size:16px;letter-spacing:0">${lastLog?fmtDate(lastLog.date):'—'}</div><div class="sbar"><div class="sbf s-ok" style="width:${lastLog?60:0}%"></div></div></div>
-      <div class="stat"><div class="stat-lbl">Servicios</div><div class="stat-val">${assetLogs.length}<span>total</span></div><div class="sbar"><div class="sbf" style="width:${Math.min(100,assetLogs.length*10)}%"></div></div></div>`;
+    statsH=`<div class="stat"><div class="stat-lbl">Kilometraje</div><div class="stat-val">${km}</div><div class="sbar"><div class="sbf s-ok" style="width:40%"></div></div></div><div class="stat"><div class="stat-lbl">Próx. km</div><div class="stat-val">${nkd}</div><div class="sbar"><div class="sbf ${minKmLeft!==null&&minKmLeft<=500?'s-due':minKmLeft!==null&&minKmLeft<=1500?'s-warn':'s-ok'}" style="width:${minKmLeft!==null?Math.min(100,(1-minKmLeft/5000)*100):0}%"></div></div></div><div class="stat"><div class="stat-lbl">Próx. días</div><div class="stat-val">${ndd}</div><div class="sbar"><div class="sbf ${minDaysLeft!==null&&minDaysLeft<=0?'s-due':minDaysLeft!==null&&minDaysLeft<=7?'s-warn':'s-ok'}" style="width:${minDaysLeft!==null?Math.min(100,(30-minDaysLeft)/30*100):0}%"></div></div></div><div class="stat"><div class="stat-lbl">Servicios</div><div class="stat-val">${assetLogs.length}<span>total</span></div><div class="sbar"><div class="sbf" style="width:${Math.min(100,assetLogs.length*10)}%"></div></div></div>`;
+  } else {
+    const lastLog=assetLogs[0]; const ndd=minDaysLeft!==null?(minDaysLeft<=0?'<span style="color:var(--red)">VENCIDO</span>':minDaysLeft+'<span>días</span>'):'—';
+    statsH=`<div class="stat"><div class="stat-lbl">Próx. Servicio</div><div class="stat-val">${ndd}</div><div class="sbar"><div class="sbf ${minDaysLeft!==null&&minDaysLeft<=0?'s-due':minDaysLeft!==null&&minDaysLeft<=7?'s-warn':'s-ok'}" style="width:${minDaysLeft!==null?Math.min(100,(30-minDaysLeft)/30*100):0}%"></div></div></div><div class="stat"><div class="stat-lbl">Último</div><div class="stat-val" style="font-size:16px;letter-spacing:0">${lastLog?fmtDate(lastLog.date):'—'}</div><div class="sbar"><div class="sbf s-ok" style="width:${lastLog?60:0}%"></div></div></div><div class="stat"><div class="stat-lbl">Servicios</div><div class="stat-val">${assetLogs.length}<span>total</span></div><div class="sbar"><div class="sbf" style="width:${Math.min(100,assetLogs.length*10)}%"></div></div></div>`;
   }
-
   const badgeH=astatus==='due'?`<span class="badge b-due">⚠ Vencido</span>`:astatus==='warn'?`<span class="badge b-warn">↑ Próximo</span>`:`<span class="badge b-ok">✓ Al día</span>`;
-
-  // ── Table ──
   let tableH='';
-  if(!stypes.length){
-    tableH=`<div class="ep">No hay tipos de servicio. Haz clic en <strong>＋ Agregar servicio</strong> para comenzar.</div>`;
-  }else{
-    stypes.forEach(st=>{
-      const s=calcStatus(asset,st);
-      let intv='';
-      if(st.trigger==='km')intv=`Cada ${Number(st.kmInterval).toLocaleString('es')} km`;
-      else if(st.trigger==='time')intv=`Cada ${st.dayInterval} días`;
-      else intv=`${Number(st.kmInterval).toLocaleString('es')} km / ${st.dayInterval} días`;
-      const ttag=st.trigger==='km'?'<span class="ttag t-km">📏 km</span>':st.trigger==='time'?'<span class="ttag t-time">📅 tiempo</span>':'<span class="ttag t-both">⚡ ambos</span>';
-      let lastStr='—';
-      if(s.lastDate){lastStr=fmtDate(s.lastDate);if(s.lastKm)lastStr+=`<br><span style="font-size:10px;color:var(--text-4)">${Number(s.lastKm).toLocaleString('es')} km</span>`;}
-      let nextStr='',nc='td';
-      const np=[];
-      if(s.nextDate){const dl=s.daysLeft;if(dl<=0){np.push(`<span style="color:var(--red);font-weight:700">VENCIDO</span>`);nc='td alert';}else{np.push(fmtDate(s.nextDate));np.push(`<span style="font-size:10px;color:var(--text-3)">en ${dl} días</span>`);if(dl<=30)nc='td warn';}}
-      if(s.nextKm){const kl=Math.round(s.kmLeft||0);if(kl<=0){np.push(`<span style="color:var(--red);font-weight:700">VENCIDO</span>`);nc='td alert';}else{np.push(`${Number(s.nextKm).toLocaleString('es')} km`);np.push(`<span style="font-size:10px;color:var(--text-3)">faltan ${Number(kl).toLocaleString('es')} km</span>`);if(kl<=500)nc='td alert';else if(kl<=1500)nc='td warn';}}
-      if(!np.length)nextStr=s.neverDone?`<span style="color:var(--text-4)">Sin registros</span>`:'—';else nextStr=np.join('<br>');
-      const pct=Math.min(100,Math.max(0,s.pct||0));
-      const fc=s.status==='due'?'f-due':s.status==='warn'?'f-warn':'f-ok';
-      const pc=s.status==='due'?'var(--red)':s.status==='warn'?'var(--orange)':'var(--green)';
-      tableH+=`<div class="tbl-r">
-        <div><div class="rname">${esc(st.name)}</div>${ttag}</div>
-        <div class="td">${intv}</div>
-        <div class="td hi">${lastStr}</div>
-        <div class="${nc}">${nextStr}</div>
-        <div class="td"><div class="mw"><div class="mb"><div class="mf ${fc}" style="width:${pct}%"></div></div><span class="pct" style="color:${pc}">${s.neverDone?'—':pct+'%'}</span></div></div>
-        <div class="td" style="display:flex;gap:5px;align-items:center">
-          <button class="btn-log ${s.status==='due'?'urg':''}" onclick="openLogModal('${asset.id}','${st.id}')">LOG</button>
-          <button class="ico-btn" onclick="openServiceTypeModal('${asset.id}','${st.id}')" title="Editar">✎</button>
-        </div>
-      </div>`;
-    });
-  }
-
-  // ── Alerts ──
-  const alerts=[];
-  stypes.forEach(st=>{
-    const s=calcStatus(asset,st);
-    if(s.neverDone)return;
-    const isDue=s.status==='due';
-    const isSoon=(s.daysLeft!==null&&s.daysLeft>=0&&s.daysLeft<=30)||(s.kmLeft!==null&&s.kmLeft>=0&&s.kmLeft<=1500);
-    if(!isDue&&!isSoon)return;
-    let when='',wc='var(--text-3)';
-    if(isDue){when='VENCIDO';wc='var(--red)';}
-    else if(s.daysLeft!==null&&s.daysLeft<=30){when=s.daysLeft+' días';wc=s.daysLeft<=7?'var(--red)':'var(--orange)';}
-    else if(s.kmLeft!==null&&s.kmLeft<=1500){when=Number(s.kmLeft).toLocaleString('es')+' km';wc=s.kmLeft<=200?'var(--red)':'var(--orange)';}
-    const bg=isDue?'#fff2f1':s.status==='warn'?'#fff8f0':'#f5f5f7';
-    alerts.push(`<div class="alert-row"><div class="alert-ico" style="background:${bg}">${icon(asset.type)}</div><div class="alert-body"><div class="alert-ttl">${esc(st.name)}</div><div class="alert-dsc">${esc(asset.name)}</div></div><div class="alert-when" style="color:${wc}">${when}</div></div>`);
-  });
+  if(!stypes.length){ tableH=`<div class="ep">No hay tipos de servicio. Haz clic en <strong>＋ Agregar servicio</strong>.</div>`; }
+  else { stypes.forEach(st=>{ const s=calcStatus(asset,st); let intv=st.trigger==='km'?`Cada ${Number(st.kmInterval).toLocaleString('es')} km`:st.trigger==='time'?`Cada ${st.dayInterval} días`:`${Number(st.kmInterval).toLocaleString('es')} km / ${st.dayInterval} días`; const ttag=st.trigger==='km'?'<span class="ttag t-km">📏 km</span>':st.trigger==='time'?'<span class="ttag t-time">📅 tiempo</span>':'<span class="ttag t-both">⚡ ambos</span>'; let lastStr='—'; if(s.lastDate){lastStr=fmtDate(s.lastDate);if(s.lastKm)lastStr+=`<br><span style="font-size:10px;color:var(--text-4)">${Number(s.lastKm).toLocaleString('es')} km</span>`;} let nextStr='',nc='td'; const np=[]; if(s.nextDate){const dl=s.daysLeft;if(dl<=0){np.push(`<span style="color:var(--red);font-weight:700">VENCIDO</span>`);nc='td alert';}else{np.push(fmtDate(s.nextDate));np.push(`<span style="font-size:10px;color:var(--text-3)">en ${dl} días</span>`);if(dl<=30)nc='td warn';}} if(s.nextKm){const kl=Math.round(s.kmLeft||0);if(kl<=0){np.push(`<span style="color:var(--red);font-weight:700">VENCIDO</span>`);nc='td alert';}else{np.push(`${Number(s.nextKm).toLocaleString('es')} km`);np.push(`<span style="font-size:10px;color:var(--text-3)">faltan ${Number(kl).toLocaleString('es')} km</span>`);if(kl<=500)nc='td alert';else if(kl<=1500)nc='td warn';}} if(!np.length)nextStr=s.neverDone?`<span style="color:var(--text-4)">Sin registros</span>`:'—';else nextStr=np.join('<br>'); const pct=Math.min(100,Math.max(0,s.pct||0)); const fc=s.status==='due'?'f-due':s.status==='warn'?'f-warn':'f-ok'; const pc=s.status==='due'?'var(--red)':s.status==='warn'?'var(--orange)':'var(--green)'; tableH+=`<div class="tbl-r"><div><div class="rname">${esc(st.name)}</div>${ttag}</div><div class="td">${intv}</div><div class="td hi">${lastStr}</div><div class="${nc}">${nextStr}</div><div class="td"><div class="mw"><div class="mb"><div class="mf ${fc}" style="width:${pct}%"></div></div><span class="pct" style="color:${pc}">${s.neverDone?'—':pct+'%'}</span></div></div><div class="td" style="display:flex;gap:5px;align-items:center"><button class="btn-log ${s.status==='due'?'urg':''}" onclick="openLogModal('${asset.id}','${st.id}')">LOG</button><button class="ico-btn" onclick="openServiceTypeModal('${asset.id}','${st.id}')" title="Editar">✎</button></div></div>`; }); }
+  const alerts=[]; stypes.forEach(st=>{ const s=calcStatus(asset,st); if(s.neverDone)return; const isDue=(s.status==='due'); const isSoon=(s.daysLeft!==null&&s.daysLeft>=0&&s.daysLeft<=30)||(s.kmLeft!==null&&s.kmLeft>=0&&s.kmLeft<=1500); if(!isDue&&!isSoon)return; let when='',wc='var(--text-3)'; if(isDue){when='VENCIDO';wc='var(--red)';}else if(s.daysLeft!==null&&s.daysLeft<=30){when=s.daysLeft+' días';wc=s.daysLeft<=7?'var(--red)':'var(--orange)';}else if(s.kmLeft!==null&&s.kmLeft<=1500){when=Number(s.kmLeft).toLocaleString('es')+' km';wc=s.kmLeft<=200?'var(--red)':'var(--orange)';} const bg=isDue?'#fff2f1':s.status==='warn'?'#fff8f0':'#f5f5f7'; alerts.push(`<div class="alert-row"><div class="alert-ico" style="background:${bg}">${at.emoji}</div><div class="alert-body"><div class="alert-ttl">${esc(st.name)}</div><div class="alert-dsc">${esc(asset.name)}</div></div><div class="alert-when" style="color:${wc}">${when}</div></div>`); });
   const alertsBody=alerts.length?alerts.join(''):`<div class="ep">Sin alertas próximas.</div>`;
-
-  const odoH=asset.type==='car'?`
-    <div class="bg2">
-      <div class="card">
-        <div class="card-hdr"><div class="card-ttl">Odómetro</div></div>
-        <div class="odo-in">
-          <div class="odo-disp" id="odo-display">${renderOdo(asset.km)}</div>
-          <div class="odo-row"><input class="odo-inp" id="odo-input" type="number" placeholder="Lectura actual..." value="${asset.km||''}"><button class="btn-upd" onclick="updateOdo()">Actualizar</button></div>
-          <div class="odo-note" id="odo-note">${asset.kmDate?`Última lectura · ${fmtDate(asset.kmDate)}`:'Sin lecturas previas'}</div>
-        </div>
-      </div>
-      <div class="card"><div class="card-hdr"><div class="card-ttl">Alertas Próximas</div></div>${alertsBody}</div>
-    </div>`:`<div class="card"><div class="card-hdr"><div class="card-ttl">Alertas Próximas</div></div>${alertsBody}</div>`;
-
-  const histH=assetLogs.length?assetLogs.map((l,i)=>{
-    const st=db.serviceTypes.find(x=>x.id===l.stId);
-    return`<div class="log-row"><div class="ldot ${i===0?'fresh':'old'}"></div><div class="ldate">${fmtDate(l.date)}</div><div class="lsvc">${esc(st?st.name:'Servicio')}</div><div class="lkm">${l.km?Number(l.km).toLocaleString('es')+' km':''}</div><div class="lmeta">${l.ws?`<span>${esc(l.ws)}</span>`:''}</div><div class="lcost">${l.cost?'$'+Number(l.cost).toFixed(2):''}</div><div class="lact"><button class="ico-btn" onclick="openLogModal(null,null,'${l.id}')" title="Editar">✎</button></div></div>`;
-  }).join(''):`<div class="ep">Aún no hay servicios registrados para este activo.</div>`;
-
-  el.innerHTML=`
-    <div class="card hero">
-      <div class="hero-bg">${icon(asset.type)}</div>
-      <div class="hero-in">
-        <div class="hero-top">
-          <div><div class="hero-name">${esc(asset.name)}</div><div class="hero-sub">${esc(subParts.join(' · ')||tname(asset.type))}</div></div>
-          <div class="hero-r">${badgeH}<button class="btn btn-gray btn-sm" onclick="openAssetModal('${asset.id}')">Editar</button></div>
-        </div>
-        <div class="hero-stats">${statsH}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-hdr"><div class="card-ttl">Programa de Mantenimiento</div><button class="btn-ghost" onclick="openServiceTypeModal('${asset.id}')">＋ Agregar servicio</button></div>
-      <div class="tbl-h"><div class="th">Servicio</div><div class="th">Intervalo</div><div class="th">Último</div><div class="th">Próximo</div><div class="th">Progreso</div><div class="th"></div></div>
-      ${tableH}
-    </div>
-    ${odoH}
-    <div class="card">
-      <div class="card-hdr"><div class="card-ttl">Historial de Servicios</div><button class="btn-ghost" onclick="exportCSV('${asset.id}')">Exportar CSV</button></div>
-      ${histH}
-    </div>`;
+  const odoH=at.useKm?`<div class="bg2"><div class="card"><div class="card-hdr"><div class="card-ttl">Odómetro</div></div><div class="odo-in"><div class="odo-disp" id="odo-display">${renderOdo(asset.km)}</div><div class="odo-row"><input class="odo-inp" id="odo-input" type="number" placeholder="Lectura actual..." value="${asset.km||''}"><button class="btn-upd" onclick="updateOdo()">Actualizar</button></div><div class="odo-note" id="odo-note">${asset.kmDate?`Última lectura · ${fmtDate(asset.kmDate)}`:'Sin lecturas previas'}</div></div></div><div class="card"><div class="card-hdr"><div class="card-ttl">Alertas Próximas</div></div>${alertsBody}</div></div>`:`<div class="card"><div class="card-hdr"><div class="card-ttl">Alertas Próximas</div></div>${alertsBody}</div>`;
+  const histH=assetLogs.length?assetLogs.map((l,i)=>{ const st=db.serviceTypes.find(x=>x.id===l.stId); return`<div class="log-row"><div class="ldot ${i===0?'fresh':'old'}"></div><div class="ldate">${fmtDate(l.date)}</div><div class="lsvc">${esc(st?st.name:'Servicio')}</div><div class="lkm">${l.km?Number(l.km).toLocaleString('es')+' km':''}</div><div class="lmeta">${l.ws?`<span>${esc(l.ws)}</span>`:''}</div><div class="lcost">${l.cost?'$'+Number(l.cost).toFixed(2):''}</div><div class="lact"><button class="ico-btn" onclick="openLogModal(null,null,'${l.id}')" title="Editar">✎</button></div></div>`; }).join(''):`<div class="ep">Aún no hay servicios registrados.</div>`;
+  el.innerHTML=`<div class="card hero"><div class="hero-bg">${at.emoji}</div><div class="hero-in"><div class="hero-top"><div><div class="hero-name">${esc(asset.name)}</div><div class="hero-sub">${esc(subParts.join(' · ')||at.name)}</div></div><div class="hero-r">${badgeH}<button class="btn btn-gray btn-sm" onclick="openAssetModal('${asset.id}')">Editar</button></div></div><div class="hero-stats">${statsH}</div></div></div><div class="card"><div class="card-hdr"><div class="card-ttl">Programa de Mantenimiento</div><button class="btn-ghost" onclick="openServiceTypeModal('${asset.id}')">＋ Agregar servicio</button></div><div class="tbl-h"><div class="th">Servicio</div><div class="th">Intervalo</div><div class="th">Último</div><div class="th">Próximo</div><div class="th">Progreso</div><div class="th"></div></div>${tableH}</div>${odoH}<div class="card"><div class="card-hdr"><div class="card-ttl">Historial de Servicios</div><button class="btn-ghost" onclick="exportCSV('${asset.id}')">Exportar CSV</button></div>${histH}</div>`;
 }
 
-function renderOdo(km){
-  if(!km)return`<div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-sep">,</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-unit">KM</div>`;
-  const s=String(Math.round(km)).padStart(6,'0');
-  return`<div class="odo-d">${s[0]}</div><div class="odo-d">${s[1]}</div><div class="odo-sep">,</div><div class="odo-d">${s[2]}</div><div class="odo-d">${s[3]}</div><div class="odo-d">${s[4]}</div><div class="odo-unit">KM</div>`;
-}
+function renderOdo(km){ if(!km)return`<div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-sep">,</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-unit">KM</div>`; const s=String(Math.round(km)).padStart(6,'0'); return`<div class="odo-d">${s[0]}</div><div class="odo-d">${s[1]}</div><div class="odo-sep">,</div><div class="odo-d">${s[2]}</div><div class="odo-d">${s[3]}</div><div class="odo-d">${s[4]}</div><div class="odo-unit">KM</div>`; }
 
-// ── ODOMETER ──
-function updateOdo(){
-  const asset=db.assets.find(a=>a.id===sel);if(!asset)return;
+// ══════════════════════════════════════════
+//  ODOMETER
+// ══════════════════════════════════════════
+async function updateOdo(){
+  const asset=db.assets.find(a=>a.id===sel); if(!asset)return;
   const val=parseFloat(document.getElementById('odo-input').value);
   if(!val||val<0){toast('⚠ Ingresa un kilometraje válido');return;}
-  asset.km=val;asset.kmDate=today();
-  db.odo.push({id:uid(),assetId:sel,km:val,date:asset.kmDate});
-  save();
-  document.getElementById('odo-display').innerHTML=renderOdo(val);
-  document.getElementById('odo-note').textContent=`Última lectura · ${fmtDate(asset.kmDate)} · ${val.toLocaleString('es')} km`;
-  render();toast('✓ Odómetro actualizado');
+  setSyncStatus('syncing');
+  try {
+    await SB.update('assets', asset.id, { km: val, km_date: today() });
+    await SB.insert('odo_logs', { id:uid(), asset_id:asset.id, km:val, date:today() });
+    asset.km=val; asset.kmDate=today();
+    setSyncStatus('ok');
+    document.getElementById('odo-display').innerHTML=renderOdo(val);
+    document.getElementById('odo-note').textContent=`Última lectura · ${fmtDate(today())} · ${val.toLocaleString('es')} km`;
+    render(); toast('✓ Odómetro actualizado');
+  } catch(e){ setSyncStatus('error'); toast('⚠ Error guardando: '+e.message); }
 }
 
-// ── ASSET MODAL ──
-function selectAsset(id){sel=id;render();}
+// ══════════════════════════════════════════
+//  ASSET MODAL
+// ══════════════════════════════════════════
+function populateTypeSelect(selectedVal){
+  const s=document.getElementById('f-type'); s.innerHTML='<option value="">Seleccionar...</option>';
+  const cats={};
+  db.assetTypes.forEach(at=>{ const c=at.category||'Otros'; if(!cats[c])cats[c]=[]; cats[c].push(at); });
+  Object.entries(cats).forEach(([cat,types])=>{ const og=document.createElement('optgroup'); og.label=cat; types.forEach(at=>{ const o=document.createElement('option'); o.value=at.id; o.textContent=at.emoji+' '+at.name; if(at.id===selectedVal)o.selected=true; og.appendChild(o); }); s.appendChild(og); });
+}
+
+function selectAsset(id){ sel=id; render(); }
+
 function openAssetModal(editId){
-  clearAF();
-  if(editId){
-    const a=db.assets.find(x=>x.id===editId);if(!a)return;
-    document.getElementById('ma-ttl').textContent='Editar Activo';
-    document.getElementById('f-id').value=a.id;document.getElementById('f-name').value=a.name||'';
-    document.getElementById('f-type').value=a.type||'';document.getElementById('f-model').value=a.model||'';
-    document.getElementById('f-year').value=a.year||'';document.getElementById('f-plate').value=a.plate||'';
-    document.getElementById('f-loc').value=a.loc||'';document.getElementById('f-km').value=a.km||'';
-    document.getElementById('f-km-date').value=a.kmDate||'';document.getElementById('f-notes').value=a.notes||'';
-    document.getElementById('danger-zone').style.display='flex';onTypeChange();
-  }else{
-    document.getElementById('ma-ttl').textContent='Nuevo Activo';
-    document.getElementById('danger-zone').style.display='none';
-    document.getElementById('f-km-date').value=today();
-  }
+  clearAF(); populateTypeSelect('');
+  if(editId){ const a=db.assets.find(x=>x.id===editId); if(!a)return; document.getElementById('ma-ttl').textContent='Editar Activo'; document.getElementById('f-id').value=a.id; document.getElementById('f-name').value=a.name||''; document.getElementById('f-model').value=a.model||''; document.getElementById('f-year').value=a.year||''; document.getElementById('f-plate').value=a.plate||''; document.getElementById('f-loc').value=a.loc||''; document.getElementById('f-km').value=a.km||''; document.getElementById('f-km-date').value=a.kmDate||''; document.getElementById('f-notes').value=a.notes||''; populateTypeSelect(a.type); document.getElementById('danger-zone').style.display='flex'; onTypeChange(); }
+  else{ document.getElementById('ma-ttl').textContent='Nuevo Activo'; document.getElementById('danger-zone').style.display='none'; document.getElementById('f-km-date').value=today(); }
+  document.getElementById('asset-save-btn').dataset.label='Guardar';
   document.getElementById('modal-asset').classList.add('open');
 }
-function clearAF(){['f-id','f-name','f-model','f-year','f-plate','f-loc','f-km','f-km-date','f-notes'].forEach(i=>document.getElementById(i).value='');document.getElementById('f-type').value='';onTypeChange();}
-function onTypeChange(){const t=document.getElementById('f-type').value;document.getElementById('c-plate').classList.toggle('show',t==='car');document.getElementById('c-loc').classList.toggle('show',t==='ac'||t==='water');document.getElementById('c-km').classList.toggle('show',t==='car');}
-async function saveAsset() {
-    // 1. Recogemos los datos del formulario con los nombres NUEVOS
-    const id = document.getElementById('f-id').value || Math.random().toString(36).substr(2, 9);
-    const name = document.getElementById('f-name').value;
-    const type = document.getElementById('f-type').value;
 
-    const assetData = {
-        id: id,
-        name: name,                // Antes era 'nombre'
-        type: type,                // Antes era 'categoria'
-        purchaseDate: document.getElementById('f-purchase-date').value || null, // Antes 'fecha_compra'
-        kmDate: document.getElementById('f-km-date').value || null,           // Antes 'proximo_mantenimiento'
-        notes: document.getElementById('f-notes').value || ""                 // Antes 'notas'
-    };
+function clearAF(){ ['f-id','f-name','f-model','f-year','f-plate','f-loc','f-km','f-km-date','f-notes'].forEach(i=>document.getElementById(i).value=''); onTypeChange(); }
 
-    console.log("💾 Guardando en Supabase:", assetData);
+function onTypeChange(){ const tid=document.getElementById('f-type').value; const at=tid?getAssetType(tid):null; document.getElementById('c-plate').style.display=(at&&at.usePlate)?'flex':'none'; document.getElementById('c-loc').style.display=(at&&at.useLoc)?'flex':'none'; document.getElementById('c-km').style.display=(at&&at.useKm)?'grid':'none'; }
 
-    try {
-        const { data, error } = await supabaseClient
-            .from('activos')
-            .upsert(assetData); // Upsert inserta si no existe o actualiza si el ID coincide
-
-        if (error) throw error;
-
-        // 2. Actualizamos la "mochila" local (db.assets) para no tener que recargar la página
-        const index = db.assets.findIndex(a => a.id === id);
-        if (index > -1) {
-            db.assets[index] = { ...assetData, services: db.assets[index].services || [], logs: db.assets[index].logs || [] };
-        } else {
-            db.assets.push({ ...assetData, services: [], logs: [] });
-        }
-
-        sel = id;
-        closeModal('modal-asset');
-        render(); // Redibujamos la interfaz
-        toast('✅ Activo guardado en la nube');
-
-    } catch (error) {
-        console.error("❌ Error al guardar:", error);
-        alert("Error al guardar en la nube: " + error.message);
-    }
+async function saveAsset(){
+  const name=document.getElementById('f-name').value.trim();
+  const type=document.getElementById('f-type').value;
+  if(!name){toast('⚠ El nombre es obligatorio');return;}
+  if(!type){toast('⚠ Selecciona el tipo de activo');return;}
+  const editId=document.getElementById('f-id').value;
+  const asset={ id:editId||uid(), name, type, model:document.getElementById('f-model').value.trim()||null, year:document.getElementById('f-year').value||null, plate:document.getElementById('f-plate').value.trim().toUpperCase()||null, loc:document.getElementById('f-loc').value.trim()||null, km:parseFloat(document.getElementById('f-km').value)||null, kmDate:document.getElementById('f-km-date').value||null, notes:document.getElementById('f-notes').value.trim()||null, createdAt:editId?(db.assets.find(a=>a.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString() };
+  setBtn('asset-save-btn',true); setSyncStatus('syncing');
+  try {
+    if(editId){ await SB.update('assets', editId, toDbAsset(asset)); const i=db.assets.findIndex(a=>a.id===editId); if(i>-1)db.assets[i]=asset; toast('✓ Activo actualizado'); }
+    else{ await SB.insert('assets', toDbAsset(asset)); db.assets.push(asset); sel=asset.id; toast('✓ Activo agregado'); }
+    setSyncStatus('ok'); closeModal('modal-asset'); render();
+  } catch(e){ setSyncStatus('error'); toast('⚠ Error: '+e.message); }
+  setBtn('asset-save-btn',false);
 }
-function deleteAsset(){
-  const editId=document.getElementById('f-id').value;if(!editId)return;
+
+async function deleteAsset(){
+  const editId=document.getElementById('f-id').value; if(!editId)return;
   if(!confirm('¿Eliminar este activo y todo su historial?'))return;
-  db.assets=db.assets.filter(a=>a.id!==editId);db.serviceTypes=db.serviceTypes.filter(s=>s.assetId!==editId);db.logs=db.logs.filter(l=>l.assetId!==editId);db.odo=db.odo.filter(o=>o.assetId!==editId);
-  if(sel===editId)sel=db.assets.length?db.assets[0].id:null;
-  save();closeModal('modal-asset');toast('Activo eliminado');render();
+  setSyncStatus('syncing');
+  try {
+    await SB.remove('assets', editId); // CASCADE handles children
+    db.assets=db.assets.filter(a=>a.id!==editId);
+    db.serviceTypes=db.serviceTypes.filter(s=>s.assetId!==editId);
+    db.logs=db.logs.filter(l=>l.assetId!==editId);
+    if(sel===editId) sel=db.assets.length?db.assets[0].id:null;
+    setSyncStatus('ok'); closeModal('modal-asset'); toast('Activo eliminado'); render();
+  } catch(e){ setSyncStatus('error'); toast('⚠ Error: '+e.message); }
 }
 
-// ── SERVICE TYPE MODAL ──
-let stTrig='km';
-function setTrig(t){
-  stTrig=t;
-  ['km','time','both'].forEach(x=>document.getElementById('seg-'+x).classList.toggle('active',x===t));
-  document.getElementById('st-km-row').style.display=(t==='km'||t==='both')?'grid':'none';
-  document.getElementById('st-day-row').style.display=(t==='time'||t==='both')?'grid':'none';
+// ══════════════════════════════════════════
+//  ASSET TYPES MODAL
+// ══════════════════════════════════════════
+function openAssetTypesModal(){ renderAssetTypesList(); document.getElementById('modal-at-list').classList.add('open'); }
+
+function renderAssetTypesList(){
+  const cats={};
+  db.assetTypes.forEach(at=>{ const c=at.category||'Otros'; if(!cats[c])cats[c]=[]; cats[c].push(at); });
+  let html='';
+  Object.entries(cats).forEach(([cat,types])=>{
+    html+=`<div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin:8px 0 4px">${esc(cat)}</div>`;
+    types.forEach(at=>{ const cnt=db.assets.filter(a=>a.type===at.id).length; html+=`<div class="at-row" onclick="openAssetTypeEdit('${at.id}')"><div class="at-emoji">${at.emoji}</div><div class="at-info"><div class="at-name">${esc(at.name)}</div><div class="at-meta">${at.useKm?'<span class="at-tag tag-km">📏 odómetro</span>':''}${at.useLoc?'<span class="at-tag tag-loc">📍 ubicación</span>':''}${at.builtin?'<span class="at-tag tag-builtin">predeterminado</span>':''}<span style="color:var(--text-4)">${cnt} activo${cnt!==1?'s':''}</span></div></div><span style="color:var(--text-4);font-size:16px">›</span></div>`; });
+  });
+  html+=`<button class="at-add-btn" onclick="openAssetTypeEdit(null)">＋ Nuevo Tipo de Activo</button>`;
+  document.getElementById('at-list-body').innerHTML=html;
 }
-function openServiceTypeModal(assetId,editId){
-  stTrig='km';['st-id','st-name','st-km','st-days','st-notes'].forEach(i=>document.getElementById(i).value='');
-  setTrig('km');document.getElementById('st-dz').style.display='none';
-  if(editId){
-    const st=db.serviceTypes.find(x=>x.id===editId);if(!st)return;
-    document.getElementById('mst-ttl').textContent='Editar Tipo de Servicio';
-    document.getElementById('st-id').value=st.id;document.getElementById('st-aid').value=st.assetId;
-    document.getElementById('st-name').value=st.name||'';document.getElementById('st-km').value=st.kmInterval||'';
-    document.getElementById('st-days').value=st.dayInterval||'';document.getElementById('st-notes').value=st.notes||'';
-    stTrig=st.trigger||'km';setTrig(stTrig);document.getElementById('st-dz').style.display='flex';
-    const a=db.assets.find(x=>x.id===st.assetId);document.getElementById('mst-asset').textContent=a?a.name:'';
-  }else{
-    document.getElementById('mst-ttl').textContent='Nuevo Tipo de Servicio';
-    document.getElementById('st-aid').value=assetId||'';
-    const a=db.assets.find(x=>x.id===assetId);
-    document.getElementById('mst-asset').textContent=a?a.name:'';
-    if(a&&a.type!=='car')setTrig('time');
-  }
+
+const EMOJI_OPTIONS=['🚗','🚙','🚕','🚌','🏎','🛻','🚐','🛵','🏍','🚲','✈️','⛵','🚢','❄️','💧','🧹','🧺','👕','🍳','☕','🧊','🔥','♨️','🌡','🔌','💡','🔋','📺','📻','💻','🖥','📠','☎️','🔧','🔨','🪛','🏠','🏡','🌿','🌱','🪴','⚙️','🔩','🗜','🧲','🪟','🚪','🛁','🚿','🪣','🧴','🪑','🛋','🛏','🧯','🔒','📦'];
+let atePickedEmoji='🔧';
+
+function openAssetTypeEdit(typeId){
+  document.getElementById('ate-id').value=''; document.getElementById('ate-name').value=''; document.getElementById('ate-cat').value=''; document.getElementById('ate-km').checked=false; document.getElementById('ate-plate').checked=false; document.getElementById('ate-loc').checked=false; document.getElementById('ate-emoji-custom').value=''; document.getElementById('ate-dz').style.display='none';
+  atePickedEmoji='🔧';
+  document.getElementById('ate-emoji-grid').innerHTML=EMOJI_OPTIONS.map(e=>`<button class="emoji-opt ${e===atePickedEmoji?'picked':''}" onclick="pickEmoji('${e}')">${e}</button>`).join('');
+  updateEmojiPreview('🔧');
+  if(typeId){ const at=db.assetTypes.find(x=>x.id===typeId); if(!at)return; document.getElementById('ate-ttl').textContent='Editar Tipo de Activo'; document.getElementById('ate-id').value=at.id; document.getElementById('ate-name').value=at.name||''; document.getElementById('ate-cat').value=at.category||''; document.getElementById('ate-km').checked=!!at.useKm; document.getElementById('ate-plate').checked=!!at.usePlate; document.getElementById('ate-loc').checked=!!at.useLoc; atePickedEmoji=at.emoji||'🔧'; updateEmojiPreview(atePickedEmoji); refreshEmojiGrid(); if(!at.builtin) document.getElementById('ate-dz').style.display='flex'; }
+  else{ document.getElementById('ate-ttl').textContent='Nuevo Tipo de Activo'; }
+  closeModal('modal-at-list'); document.getElementById('ate-save-btn').dataset.label='Guardar'; document.getElementById('modal-at-edit').classList.add('open');
+}
+
+function pickEmoji(e){ atePickedEmoji=e; document.getElementById('ate-emoji-custom').value=''; updateEmojiPreview(e); refreshEmojiGrid(); }
+function updateEmojiPreview(e){ document.getElementById('ate-preview').textContent=e; }
+function refreshEmojiGrid(){ document.querySelectorAll('.emoji-opt').forEach(btn=>btn.classList.toggle('picked',btn.textContent===atePickedEmoji)); }
+document.addEventListener('DOMContentLoaded',()=>{ document.getElementById('ate-emoji-custom').addEventListener('input',function(){ const v=this.value.trim(); if(v){atePickedEmoji=v;updateEmojiPreview(v);refreshEmojiGrid();} }); });
+
+async function saveAssetType(){
+  const name=document.getElementById('ate-name').value.trim(); if(!name){toast('⚠ El nombre es obligatorio');return;}
+  const cat=document.getElementById('ate-cat').value.trim()||'Otros';
+  const emoji=document.getElementById('ate-emoji-custom').value.trim()||atePickedEmoji||'📦';
+  const editId=document.getElementById('ate-id').value;
+  const at={ id:editId||uid(), name, emoji, category:cat, useKm:document.getElementById('ate-km').checked, usePlate:document.getElementById('ate-plate').checked, useLoc:document.getElementById('ate-loc').checked, builtin:editId?(db.assetTypes.find(x=>x.id===editId)?.builtin||false):false, createdAt:editId?(db.assetTypes.find(x=>x.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString() };
+  setBtn('ate-save-btn',true); setSyncStatus('syncing');
+  try {
+    if(editId){ await SB.update('asset_types',editId,toDbAt(at)); const i=db.assetTypes.findIndex(x=>x.id===editId); if(i>-1)db.assetTypes[i]=at; toast('✓ Tipo actualizado'); }
+    else{ await SB.insert('asset_types',toDbAt(at)); db.assetTypes.push(at); toast('✓ Tipo creado'); }
+    setSyncStatus('ok'); closeModal('modal-at-edit'); openAssetTypesModal(); render();
+  } catch(e){ setSyncStatus('error'); toast('⚠ Error: '+e.message); }
+  setBtn('ate-save-btn',false);
+}
+
+async function deleteAssetType(){
+  const editId=document.getElementById('ate-id').value; if(!editId)return;
+  const at=db.assetTypes.find(x=>x.id===editId);
+  if(at?.builtin){toast('⚠ No se pueden eliminar los tipos predeterminados');return;}
+  if(db.assets.some(a=>a.type===editId)){toast('⚠ Elimina primero los activos de este tipo');return;}
+  if(!confirm(`¿Eliminar el tipo "${at?.name}"?`))return;
+  setSyncStatus('syncing');
+  try{ await SB.remove('asset_types',editId); db.assetTypes=db.assetTypes.filter(x=>x.id!==editId); setSyncStatus('ok'); closeModal('modal-at-edit'); openAssetTypesModal(); toast('Tipo eliminado'); render(); }
+  catch(e){ setSyncStatus('error'); toast('⚠ Error: '+e.message); }
+}
+
+// ══════════════════════════════════════════
+//  SERVICE TYPE MODAL
+// ══════════════════════════════════════════
+let stTrig='km';
+function setTrig(t){ stTrig=t; ['km','time','both'].forEach(x=>document.getElementById('seg-'+x).classList.toggle('active',x===t)); document.getElementById('st-km-row').style.display=(t==='km'||t==='both')?'grid':'none'; document.getElementById('st-day-row').style.display=(t==='time'||t==='both')?'grid':'none'; }
+
+function openServiceTypeModal(assetId,editId){ stTrig='km';['st-id','st-name','st-km','st-days','st-notes'].forEach(i=>document.getElementById(i).value=''); setTrig('km'); document.getElementById('st-dz').style.display='none'; document.getElementById('st-save-btn').dataset.label='Guardar';
+  if(editId){ const st=db.serviceTypes.find(x=>x.id===editId); if(!st)return; document.getElementById('mst-ttl').textContent='Editar Tipo de Servicio'; document.getElementById('st-id').value=st.id; document.getElementById('st-aid').value=st.assetId; document.getElementById('st-name').value=st.name||''; document.getElementById('st-km').value=st.kmInterval||''; document.getElementById('st-days').value=st.dayInterval||''; document.getElementById('st-notes').value=st.notes||''; stTrig=st.trigger||'km'; setTrig(stTrig); document.getElementById('st-dz').style.display='flex'; const a=db.assets.find(x=>x.id===st.assetId); document.getElementById('mst-asset').textContent=a?a.name:''; }
+  else{ document.getElementById('mst-ttl').textContent='Nuevo Tipo de Servicio'; document.getElementById('st-aid').value=assetId||''; const a=db.assets.find(x=>x.id===assetId); document.getElementById('mst-asset').textContent=a?a.name:''; const at=a?getAssetType(a.type):null; if(at&&!at.useKm)setTrig('time'); }
   document.getElementById('modal-stype').classList.add('open');
 }
-function saveServiceType(){
-  const name=document.getElementById('st-name').value.trim();
-  if(!name){toast('⚠ El nombre es obligatorio');return;}
-  const km=parseFloat(document.getElementById('st-km').value)||null;
-  const days=parseFloat(document.getElementById('st-days').value)||null;
-  if((stTrig==='km'||stTrig==='both')&&!km){toast('⚠ Ingresa el intervalo en km');return;}
-  if((stTrig==='time'||stTrig==='both')&&!days){toast('⚠ Ingresa el intervalo en días');return;}
-  const editId=document.getElementById('st-id').value;
-  const st={id:editId||uid(),assetId:document.getElementById('st-aid').value,name,trigger:stTrig,kmInterval:km,dayInterval:days,notes:document.getElementById('st-notes').value.trim(),createdAt:editId?(db.serviceTypes.find(s=>s.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString()};
-  if(editId){const i=db.serviceTypes.findIndex(s=>s.id===editId);if(i>-1)db.serviceTypes[i]=st;toast('✓ Tipo de servicio actualizado');}
-  else{db.serviceTypes.push(st);toast('✓ Tipo de servicio agregado');}
-  save();closeModal('modal-stype');render();
-}
-function deleteServiceType(){
-  const editId=document.getElementById('st-id').value;if(!editId)return;
-  if(!confirm('¿Eliminar este tipo de servicio y todos sus registros?'))return;
-  db.serviceTypes=db.serviceTypes.filter(s=>s.id!==editId);db.logs=db.logs.filter(l=>l.stId!==editId);
-  save();closeModal('modal-stype');toast('Tipo de servicio eliminado');render();
-}
 
-// ── LOG MODAL ──
+async function saveServiceType(){ const name=document.getElementById('st-name').value.trim(); if(!name){toast('⚠ El nombre es obligatorio');return;} const km=parseFloat(document.getElementById('st-km').value)||null; const days=parseFloat(document.getElementById('st-days').value)||null; if((stTrig==='km'||stTrig==='both')&&!km){toast('⚠ Ingresa el intervalo en km');return;} if((stTrig==='time'||stTrig==='both')&&!days){toast('⚠ Ingresa el intervalo en días');return;} const editId=document.getElementById('st-id').value; const st={id:editId||uid(),assetId:document.getElementById('st-aid').value,name,trigger:stTrig,kmInterval:km,dayInterval:days,notes:document.getElementById('st-notes').value.trim()||null,createdAt:editId?(db.serviceTypes.find(s=>s.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString()}; setBtn('st-save-btn',true); setSyncStatus('syncing'); try{ if(editId){await SB.update('service_types',editId,toDbSt(st));const i=db.serviceTypes.findIndex(s=>s.id===editId);if(i>-1)db.serviceTypes[i]=st;toast('✓ Tipo de servicio actualizado');}else{await SB.insert('service_types',toDbSt(st));db.serviceTypes.push(st);toast('✓ Tipo de servicio agregado');} setSyncStatus('ok');closeModal('modal-stype');render(); }catch(e){setSyncStatus('error');toast('⚠ Error: '+e.message);} setBtn('st-save-btn',false); }
+
+async function deleteServiceType(){ const editId=document.getElementById('st-id').value;if(!editId)return; if(!confirm('¿Eliminar este tipo y todos sus registros?'))return; setSyncStatus('syncing'); try{await SB.remove('service_types',editId);db.serviceTypes=db.serviceTypes.filter(s=>s.id!==editId);db.logs=db.logs.filter(l=>l.stId!==editId);setSyncStatus('ok');closeModal('modal-stype');toast('Tipo de servicio eliminado');render();}catch(e){setSyncStatus('error');toast('⚠ Error: '+e.message);} }
+
+// ══════════════════════════════════════════
+//  LOG MODAL
+// ══════════════════════════════════════════
 function openLogModal(preAid,preStId,editLogId){
   ['lg-id','lg-km','lg-cost','lg-ws','lg-notes'].forEach(i=>document.getElementById(i).value='');
-  document.getElementById('lg-date').value=today();document.getElementById('lg-dz').style.display='none';
-  const asel=document.getElementById('lg-asset');
-  asel.innerHTML='<option value="">Seleccionar activo...</option>';
-  db.assets.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;asel.appendChild(o);});
-  if(editLogId){
-    const l=db.logs.find(x=>x.id===editLogId);if(!l)return;
-    document.getElementById('ml-ttl').textContent='Editar Registro';
-    document.getElementById('lg-id').value=l.id;document.getElementById('lg-date').value=l.date||today();
-    document.getElementById('lg-km').value=l.km||'';document.getElementById('lg-cost').value=l.cost||'';
-    document.getElementById('lg-ws').value=l.ws||'';document.getElementById('lg-notes').value=l.notes||'';
-    asel.value=l.assetId;onLogAsset();document.getElementById('lg-stype').value=l.stId||'';
-    const a=db.assets.find(x=>x.id===l.assetId);if(a&&a.type==='car')document.getElementById('lg-km-g').style.display='block';
-    document.getElementById('lg-dz').style.display='flex';
-  }else{
-    document.getElementById('ml-ttl').textContent='Registrar Servicio';
-    if(preAid){asel.value=preAid;onLogAsset();}
-    if(preStId)document.getElementById('lg-stype').value=preStId;
-    const a=db.assets.find(x=>x.id===preAid);
-    if(a&&a.type==='car'){document.getElementById('lg-km-g').style.display='block';document.getElementById('lg-km').value=a.km||'';}
-    else document.getElementById('lg-km-g').style.display='none';
-  }
+  document.getElementById('lg-date').value=today(); document.getElementById('lg-dz').style.display='none'; document.getElementById('lg-save-btn').dataset.label='Guardar';
+  const asel=document.getElementById('lg-asset'); asel.innerHTML='<option value="">Seleccionar activo...</option>'; db.assets.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;asel.appendChild(o);});
+  if(editLogId){ const l=db.logs.find(x=>x.id===editLogId);if(!l)return; document.getElementById('ml-ttl').textContent='Editar Registro'; document.getElementById('lg-id').value=l.id; document.getElementById('lg-date').value=l.date||today(); document.getElementById('lg-km').value=l.km||''; document.getElementById('lg-cost').value=l.cost||''; document.getElementById('lg-ws').value=l.ws||''; document.getElementById('lg-notes').value=l.notes||''; asel.value=l.assetId; onLogAsset(); document.getElementById('lg-stype').value=l.stId||''; const a=db.assets.find(x=>x.id===l.assetId); const at=a?getAssetType(a.type):null; if(at&&at.useKm)document.getElementById('lg-km-g').style.display='block'; document.getElementById('lg-dz').style.display='flex'; }
+  else{ document.getElementById('ml-ttl').textContent='Registrar Servicio'; if(preAid){asel.value=preAid;onLogAsset();} if(preStId)document.getElementById('lg-stype').value=preStId; const a=db.assets.find(x=>x.id===preAid); const at=a?getAssetType(a.type):null; if(at&&at.useKm){document.getElementById('lg-km-g').style.display='block';document.getElementById('lg-km').value=a.km||'';}else document.getElementById('lg-km-g').style.display='none'; }
   document.getElementById('modal-log').classList.add('open');
 }
-function onLogAsset(){
-  const aid=document.getElementById('lg-asset').value;
-  const a=db.assets.find(x=>x.id===aid);
-  const sts=db.serviceTypes.filter(s=>s.assetId===aid);
-  const sel2=document.getElementById('lg-stype');
-  sel2.innerHTML='<option value="">Seleccionar servicio...</option>';
-  sts.forEach(st=>{const o=document.createElement('option');o.value=st.id;o.textContent=st.name;sel2.appendChild(o);});
-  document.getElementById('lg-km-g').style.display=(a&&a.type==='car')?'block':'none';
-  if(a&&a.type==='car')document.getElementById('lg-km').value=a.km||'';
-}
-function saveLog(){
-  const aid=document.getElementById('lg-asset').value;
-  const stId=document.getElementById('lg-stype').value;
-  const date=document.getElementById('lg-date').value;
-  if(!aid){toast('⚠ Selecciona un activo');return;}
-  if(!stId){toast('⚠ Selecciona el tipo de servicio');return;}
-  if(!date){toast('⚠ La fecha es obligatoria');return;}
-  const editId=document.getElementById('lg-id').value;
-  const kmVal=parseFloat(document.getElementById('lg-km').value)||null;
-  const log={id:editId||uid(),assetId:aid,stId,date,km:kmVal,cost:parseFloat(document.getElementById('lg-cost').value)||null,ws:document.getElementById('lg-ws').value.trim(),notes:document.getElementById('lg-notes').value.trim(),createdAt:editId?(db.logs.find(l=>l.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString()};
-  if(kmVal){const a=db.assets.find(x=>x.id===aid);if(a&&(!a.km||kmVal>a.km)){a.km=kmVal;a.kmDate=date;}}
-  if(editId){const i=db.logs.findIndex(l=>l.id===editId);if(i>-1)db.logs[i]=log;toast('✓ Registro actualizado');}
-  else{db.logs.push(log);toast('✓ Servicio registrado');}
-  save();closeModal('modal-log');render();
-}
-function deleteLog(){
-  const editId=document.getElementById('lg-id').value;if(!editId)return;
-  if(!confirm('¿Eliminar este registro de servicio?'))return;
-  db.logs=db.logs.filter(l=>l.id!==editId);
-  save();closeModal('modal-log');toast('Registro eliminado');render();
-}
 
-// ── CSV EXPORT ──
-function exportCSV(assetId){
-  const a=db.assets.find(x=>x.id===assetId);if(!a)return;
-  const logs=db.logs.filter(l=>l.assetId===assetId).slice().sort((a,b)=>b.date>a.date?1:-1);
-  if(!logs.length){toast('⚠ Sin registros para exportar');return;}
-  const rows=[['Fecha','Servicio','Kilometraje','Costo','Taller','Notas']];
-  logs.forEach(l=>{const st=db.serviceTypes.find(s=>s.id===l.stId);rows.push([l.date,st?st.name:'',l.km||'',l.cost||'',l.ws||'',l.notes||'']);});
-  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
-  const el=document.createElement('a');el.href=URL.createObjectURL(blob);el.download=`${a.name.replace(/\s+/g,'_')}_historial.csv`;el.click();URL.revokeObjectURL(el.href);
-  toast('✓ CSV exportado');
-}
+function onLogAsset(){ const aid=document.getElementById('lg-asset').value; const a=db.assets.find(x=>x.id===aid); const at=a?getAssetType(a.type):null; const sts=db.serviceTypes.filter(s=>s.assetId===aid); const sel2=document.getElementById('lg-stype'); sel2.innerHTML='<option value="">Seleccionar servicio...</option>'; sts.forEach(st=>{const o=document.createElement('option');o.value=st.id;o.textContent=st.name;sel2.appendChild(o);}); document.getElementById('lg-km-g').style.display=(at&&at.useKm)?'block':'none'; if(at&&at.useKm)document.getElementById('lg-km').value=a.km||''; }
 
-// ── MODALS ──
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});});
+async function saveLog(){ const aid=document.getElementById('lg-asset').value; const stId=document.getElementById('lg-stype').value; const date=document.getElementById('lg-date').value; if(!aid){toast('⚠ Selecciona un activo');return;} if(!stId){toast('⚠ Selecciona el tipo de servicio');return;} if(!date){toast('⚠ La fecha es obligatoria');return;} const editId=document.getElementById('lg-id').value; const kmVal=parseFloat(document.getElementById('lg-km').value)||null; const log={id:editId||uid(),assetId:aid,stId,date,km:kmVal,cost:parseFloat(document.getElementById('lg-cost').value)||null,ws:document.getElementById('lg-ws').value.trim()||null,notes:document.getElementById('lg-notes').value.trim()||null,createdAt:editId?(db.logs.find(l=>l.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString()}; setBtn('lg-save-btn',true); setSyncStatus('syncing'); try{ if(editId){await SB.update('service_logs',editId,toDbLog(log));const i=db.logs.findIndex(l=>l.id===editId);if(i>-1)db.logs[i]=log;toast('✓ Registro actualizado');}else{await SB.insert('service_logs',toDbLog(log));db.logs.push(log);toast('✓ Servicio registrado');} if(kmVal){const a=db.assets.find(x=>x.id===aid);if(a&&(!a.km||kmVal>a.km)){await SB.update('assets',aid,{km:kmVal,km_date:date});a.km=kmVal;a.kmDate=date;}} setSyncStatus('ok');closeModal('modal-log');render(); }catch(e){setSyncStatus('error');toast('⚠ Error: '+e.message);} setBtn('lg-save-btn',false); }
 
-render();
-</script>
-  <script>
-  const URL_SB = 'https://bhrnqtbpcrtlvwsqkkqb.supabase.co';
-  const KEY_SB = 'sb_publishable_4rCKHQPgXm8NDWFJIai2WA_Tp5R6s14'; 
-  const supabaseClient = supabase.createClient(URL_SB, KEY_SB);
+async function deleteLog(){ const editId=document.getElementById('lg-id').value;if(!editId)return; if(!confirm('¿Eliminar este registro?'))return; setSyncStatus('syncing'); try{await SB.remove('service_logs',editId);db.logs=db.logs.filter(l=>l.id!==editId);setSyncStatus('ok');closeModal('modal-log');toast('Registro eliminado');render();}catch(e){setSyncStatus('error');toast('⚠ Error: '+e.message);} }
 
- async function cargarDatosIniciales() {
-  try {
-    const { data, error } = await supabaseClient
-      .from('activos')
-      .select('*');
+// ══════════════════════════════════════════
+//  CSV EXPORT
+// ══════════════════════════════════════════
+function exportCSV(assetId){ const a=db.assets.find(x=>x.id===assetId);if(!a)return; const logs=db.logs.filter(l=>l.assetId===assetId).slice().sort((a,b)=>b.date>a.date?1:-1); if(!logs.length){toast('⚠ Sin registros para exportar');return;} const rows=[['Fecha','Servicio','Kilometraje','Costo','Taller','Notas']]; logs.forEach(l=>{const st=db.serviceTypes.find(s=>s.id===l.stId);rows.push([l.date,st?st.name:'',l.km||'',l.cost||'',l.ws||'',l.notes||'']);}); const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}); const el=document.createElement('a');el.href=URL.createObjectURL(blob);el.download=`${a.name.replace(/\s+/g,'_')}_historial.csv`;el.click();URL.revokeObjectURL(el.href); toast('✓ CSV exportado'); }
 
-    if (error) throw error;
+// ══════════════════════════════════════════
+//  MODALS
+// ══════════════════════════════════════════
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>{ o.addEventListener('click',e=>{ if(e.target===o)o.classList.remove('open'); }); });
 
-    if (data && data.length > 0) {
-      // Sincronizamos la mochila local (db.assets)
-      db.assets = data.map(item => ({
-        ...item,
-        // Aseguramos que existan estos arrays para que el render no falle
-        services: item.services || [],
-        logs: item.logs || []
-      }));
-
-      // Forzamos la selección del primer activo real de la lista
-      sel = db.assets[0].id;
-
-      // ¡DIBUJAR!
-      render(); 
-      console.log("🚀 Interfaz sincronizada y brillando");
-    }
-  } catch (err) {
-    console.error("Error en carga inicial:", err);
-  }
-}
+// BOOT
+boot();
 </script>
 </body>
 </html>
