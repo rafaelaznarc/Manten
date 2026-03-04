@@ -835,7 +835,7 @@ render();
   const supabaseClient = supabase.createClient(URL_SB, KEY_SB);
 
  async function cargarDatosIniciales() {
-  console.log("🔍 Iniciando descarga desde Supabase...");
+  console.log("🔍 Iniciando traducción de datos...");
   
   try {
     const { data, error } = await supabaseClient
@@ -845,24 +845,24 @@ render();
     if (error) throw error;
 
     if (data && data.length > 0) {
-      // 1. Forzamos la actualización del array específico
-      db.assets = data; 
+      // MAPEAMOS: Convertimos lo que viene de Supabase al formato de tu App
+      db.assets = data.map(item => ({
+        id: item.id,
+        name: item.nombre,      // Traducción: nombre -> name
+        type: item.categoria,   // Traducción: categoria -> type
+        kmDate: item.proximo_mantenimiento,
+        services: item.services || [], // Inicializamos arrays vacíos para que no de error
+        logs: item.logs || []
+      }));
       
-      // 2. Nos aseguramos de tener un ID seleccionado
-      if (!sel) sel = data[0].id;
+      if (!sel) sel = db.assets[0].id;
 
-      // 3. LIMPIEZA Y REDIBUJO TOTAL
-      // Intentamos llamar a render, pero también a las sub-funciones por si acaso
-      if (typeof render === 'function') {
-        render(); 
-      }
-      
-      console.log("🚀 Interfaz forzada con", data.length, "activos");
-    } else {
-      console.log("∅ No hay datos en la tabla 'activos' de Supabase");
+      // Dibujamos la interfaz
+      render(); 
+      console.log("🚀 Interfaz traducida y lista");
     }
   } catch (err) {
-    console.error("❌ Error crítico al cargar:", err);
+    console.error("❌ Error:", err);
   }
 }
 </script>
