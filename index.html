@@ -835,14 +835,20 @@ render();
   const supabaseClient = supabase.createClient(URL_SB, KEY_SB);
 
   async function cargarDatosIniciales() {
-    const { data, error } = await supabaseClient.from('activos').select('*');
-    if (!error && data.length > 0) {
-      db.assets = data;
-      if(!sel) sel = data[0].id;
-      render();
-      console.log("🚀 Datos cargados desde la nube");
-    }
+  const { data, error } = await supabaseClient.from('activos').select('*');
+  
+  if (!error && data.length > 0) {
+    db.assets = data;
+    
+    // Si no hay nada seleccionado, tomamos el primer ID de la nube
+    if(!sel) sel = data[0].id;
+    
+    // ESTA LÍNEA ES LA QUE DIBUJA LA TABLA DEL MEDIO
+    render(); 
+    
+    console.log("🚀 Datos cargados y renderizados");
   }
+}
 
   document.addEventListener('DOMContentLoaded', cargarDatosIniciales);
 </script>
