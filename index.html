@@ -719,14 +719,29 @@ function renderSummary() {
 function filterByStatus(status){
   statusFilter = (statusFilter===status) ? null : status;
   if(statusFilter){
-    const matches = db.assets.filter(a=>assetStatus(a)===statusFilter);
+    const matches = statusFilter==='due' ? db.assets.filter(a=>assetStatus(a)==='due') : db.assets.filter(a=>assetIsProximo(a));
     if(!matches.some(a=>a.id===sel)) sel = matches.length ? matches[0].id : null;
   }
   render();
 }
 
+function assetIsProximo(a){
+  // Mirrors the exact per-service conditions renderSummary() uses to count "próximos",
+  // so the sidebar filter matches what the top counter actually counted.
+  const sts = db.serviceTypes.filter(s=>s.assetId===a.id);
+  for(const st of sts){
+    const s = calcStatus(a, st);
+    if(s.status==='due') continue;
+    if(s.status==='warn') return true;
+    if(!s.neverDone && s.daysLeft!==null && s.daysLeft<=30) return true;
+  }
+  return false;
+}
+
 function renderSidebar() {
-  const visibleAssets = statusFilter ? db.assets.filter(a=>assetStatus(a)===statusFilter) : db.assets;
+  const visibleAssets = !statusFilter ? db.assets
+    : statusFilter==='due' ? db.assets.filter(a=>assetStatus(a)==='due')
+    : db.assets.filter(a=>assetIsProximo(a));
   const categories={};
   visibleAssets.forEach(a=>{ const at=getAssetType(a.type); const c=at.category||'Otros'; if(!categories[c])categories[c]=[]; categories[c].push(a); });
   let html='';
@@ -777,7 +792,7 @@ function renderContent() {
   el.innerHTML=`<div class="card hero"><div class="hero-bg">${at.emoji}</div><div class="hero-in"><div class="hero-top"><div><div class="hero-name">${esc(asset.name)}</div><div class="hero-sub">${esc(subParts.join(' · ')||at.name)}</div></div><div class="hero-r">${badgeH}<button class="btn btn-gray btn-sm" onclick="openAssetModal('${asset.id}')">Editar</button></div></div><div class="hero-stats">${statsH}</div></div></div><div class="card"><div class="card-hdr"><div class="card-ttl">Programa de Mantenimiento</div><button class="btn-ghost" onclick="openServiceTypeModal('${asset.id}')">＋ Agregar servicio</button></div><div class="tbl-h"><div class="th">Servicio</div><div class="th">Intervalo</div><div class="th">Último</div><div class="th">Próximo</div><div class="th">Progreso</div><div class="th"></div></div>${tableH}</div>${odoH}<div class="card"><div class="card-hdr"><div class="card-ttl">Historial de Servicios</div><button class="btn-ghost" onclick="exportCSV('${asset.id}')">Exportar CSV</button></div>${histH}</div>`;
 }
 
-function renderOdo(km){ if(!km)return`<div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-sep">,</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-unit">KM</div>`; const s=String(Math.round(km)).padStart(6,'0'); return`<div class="odo-d">${s[0]}</div><div class="odo-d">${s[1]}</div><div class="odo-sep">,</div><div class="odo-d">${s[2]}</div><div class="odo-d">${s[3]}</div><div class="odo-d">${s[4]}</div><div class="odo-unit">KM</div>`; }
+function renderOdo(km){ if(!km)return`<div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-sep">,</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-unit">KM</div>`; const s=String(Math.round(km)).padStart(6,'0'); return`<div class="odo-d">${s[0]}</div><div class="odo-d">${s[1]}</div><div class="odo-d">${s[2]}</div><div class="odo-sep">,</div><div class="odo-d">${s[3]}</div><div class="odo-d">${s[4]}</div><div class="odo-d">${s[5]}</div><div class="odo-unit">KM</div>`; }
 
 // ══════════════════════════════════════════
 //  ODOMETER
