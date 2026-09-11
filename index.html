@@ -84,6 +84,13 @@
   .sum-wrap{max-width:1200px;margin:0 auto;padding:24px 24px 0}
   .sum-strip{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--border-lt);border-radius:var(--r);overflow:hidden;box-shadow:var(--s1)}
   .sc{padding:20px 24px;border-right:1px solid var(--border-lt)}
+  .sc.clickable{cursor:pointer;transition:background .12s}
+  .sc.clickable:hover{background:var(--bg-2,#f5f5f7)}
+  .sc.active{background:var(--bg-2,#f5f5f7);box-shadow:inset 0 -2px 0 var(--accent,#0a5)}
+  .sc.active.red{box-shadow:inset 0 -2px 0 var(--red)}
+  .sc.active.ora{box-shadow:inset 0 -2px 0 var(--orange)}
+  .filter-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin:0 0 6px;font-size:11px;font-weight:600;color:var(--text-3);background:var(--bg-2,#f5f5f7);border-radius:6px}
+  .filter-bar span.clr{cursor:pointer;color:var(--blue,#06c);font-weight:700}
   .sc:last-child{border-right:none}
   .sl{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text-3);text-transform:uppercase;margin-bottom:6px}
   .sv{font-size:32px;font-weight:700;letter-spacing:-1px;color:var(--text);line-height:1}
@@ -353,8 +360,8 @@
   <div class="sum-wrap">
     <div class="sum-strip">
       <div class="sc"><div class="sl">Total Activos</div><div class="sv blue" id="st">0</div><div class="ss" id="sd">—</div></div>
-      <div class="sc"><div class="sl">Servicios Vencidos</div><div class="sv red" id="sv">0</div><div class="ss">requieren atención</div></div>
-      <div class="sc"><div class="sl">Próximos 30 días</div><div class="sv ora" id="sp">0</div><div class="ss">servicios por vencer</div></div>
+      <div class="sc clickable" id="sc-due" onclick="filterByStatus('due')" title="Ver activos vencidos"><div class="sl">Servicios Vencidos</div><div class="sv red" id="sv">0</div><div class="ss">requieren atención</div></div>
+      <div class="sc clickable" id="sc-warn" onclick="filterByStatus('warn')" title="Ver activos próximos a vencer"><div class="sl">Próximos 30 días</div><div class="sv ora" id="sp">0</div><div class="ss">servicios por vencer</div></div>
       <div class="sc"><div class="sl">Último Servicio</div><div class="sv" id="sl" style="font-size:20px;letter-spacing:-.3px">—</div><div class="ss" id="sld">sin registros aún</div></div>
     </div>
   </div>
@@ -545,6 +552,7 @@ function initSupabase(url, key) {
 // ══════════════════════════════════════════
 let db = { assetTypes:[], assets:[], serviceTypes:[], logs:[], odoLogs:[] };
 let sel = null;
+let statusFilter = null; // 'due' | 'warn' | null — drives sidebar filtering from summary cards
 
 // ══════════════════════════════════════════
 //  BOOT
@@ -704,18 +712,35 @@ function renderSummary() {
   const allLogs=db.logs.slice().sort((a,b)=>b.date>a.date?1:-1);
   if(allLogs.length){ const l=allLogs[0]; const st=db.serviceTypes.find(x=>x.id===l.stId); const a=db.assets.find(x=>x.id===l.assetId); document.getElementById('sl').textContent=fmtDate(l.date); document.getElementById('sld').textContent=(a?a.name:'')+(st?' — '+st.name:''); }
   else{ document.getElementById('sl').textContent='—'; document.getElementById('sld').textContent='sin registros aún'; }
+  document.getElementById('sc-due').classList.toggle('active', statusFilter==='due');
+  document.getElementById('sc-warn').classList.toggle('active', statusFilter==='warn');
+}
+
+function filterByStatus(status){
+  statusFilter = (statusFilter===status) ? null : status;
+  if(statusFilter){
+    const matches = db.assets.filter(a=>assetStatus(a)===statusFilter);
+    if(!matches.some(a=>a.id===sel)) sel = matches.length ? matches[0].id : null;
+  }
+  render();
 }
 
 function renderSidebar() {
+  const visibleAssets = statusFilter ? db.assets.filter(a=>assetStatus(a)===statusFilter) : db.assets;
   const categories={};
-  db.assets.forEach(a=>{ const at=getAssetType(a.type); const c=at.category||'Otros'; if(!categories[c])categories[c]=[]; categories[c].push(a); });
+  visibleAssets.forEach(a=>{ const at=getAssetType(a.type); const c=at.category||'Otros'; if(!categories[c])categories[c]=[]; categories[c].push(a); });
   let html='';
+  if(statusFilter){
+    const label = statusFilter==='due' ? 'Vencidos' : 'Próximos 30 días';
+    html+=`<div class="filter-bar"><span>Filtrando: ${label} (${visibleAssets.length})</span><span class="clr" onclick="filterByStatus('${statusFilter}')">✕ Ver todos</span></div>`;
+  }
   Object.entries(categories).forEach(([cat,assets])=>{
     html+=`<div class="sb-sec"><div class="sb-lbl">${esc(cat)}</div><div class="sb-list">`;
     assets.forEach(a=>{ const at=getAssetType(a.type); const sub=at.useKm?[a.year,a.plate].filter(Boolean).join(' · '):[a.model,a.loc].filter(Boolean).join(' · ')||at.name; const st=assetStatus(a); const dc=st==='due'?'d-due':st==='warn'?'d-warn':'d-ok'; html+=`<button class="abt ${a.id===sel?'active':''}" onclick="selectAsset('${a.id}')"><div class="ab-ico">${at.emoji}</div><div class="ab-inf"><span class="abn">${esc(a.name)}</span><span class="abs">${esc(sub)}</span></div><div class="sdot ${dc}"></div></button>`; });
     html+=`</div></div>`;
   });
   if(!db.assets.length) html=`<div class="sb-sec"><p style="font-size:12px;color:var(--text-3);line-height:1.7;padding:4px 8px">Sin activos aún.<br>Haz clic en <strong>Agregar Activo</strong>.</p></div>`;
+  else if(!visibleAssets.length) html+=`<div class="sb-sec"><p style="font-size:12px;color:var(--text-3);line-height:1.7;padding:4px 8px">Ningún activo coincide con este filtro.</p></div>`;
   document.getElementById('sidebar').innerHTML=html;
 }
 
