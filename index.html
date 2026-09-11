@@ -106,6 +106,9 @@
   .sb-sec{padding:14px 12px 8px}
   .sb-sec+.sb-sec{border-top:1px solid var(--border-lt)}
   .sb-lbl{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text-3);text-transform:uppercase;padding:0 8px;margin-bottom:4px}
+  .sb-lbl.clickable{cursor:pointer;display:flex;align-items:center;gap:4px;user-select:none;border-radius:4px;padding:2px 8px;margin-left:-4px}
+  .sb-lbl.clickable:hover{color:var(--accent);background:#F4EAD9}
+  .sb-chev{font-size:9px;color:var(--text-4);width:8px;display:inline-block}
   .sb-list{display:flex;flex-direction:column;gap:2px;padding-bottom:4px}
   .abt{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--rs);border:none;background:transparent;width:100%;text-align:left;cursor:pointer;transition:background .12s}
   .abt:hover{background:var(--surface2)}
@@ -506,6 +509,9 @@
 //  SUPABASE CONFIG
 // ══════════════════════════════════════════
 const CFG_KEY = 'manten_supabase_cfg';
+const COLLAPSED_KEY = 'manten_collapsed_cats';
+function getCollapsed(){ try{ return new Set(JSON.parse(localStorage.getItem(COLLAPSED_KEY))||[]); }catch(e){ return new Set(); } }
+function toggleCategory(key){ const c=getCollapsed(); c.has(key)?c.delete(key):c.add(key); localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...c])); renderSidebar(); }
 
 function getConfig() {
   try { return JSON.parse(localStorage.getItem(CFG_KEY)); } catch(e) { return null; }
@@ -782,9 +788,12 @@ function renderSidebar() {
     if(!groupAssets.length) return;
     const categories={};
     groupAssets.forEach(a=>{ const at=getAssetType(a.type); const c=at.category||'Otros'; if(!categories[c])categories[c]=[]; categories[c].push(a); });
+    const collapsed=getCollapsed();
     html+=`<div class="sb-group"><div class="sb-group-lbl">${esc(GROUP_LABELS[groupKey])}</div>`;
     Object.entries(categories).forEach(([cat,assets])=>{
-      html+=`<div class="sb-sec"><div class="sb-lbl">${esc(cat)}</div><div class="sb-list">`;
+      const catKey=groupKey+'::'+cat;
+      const isCollapsed=collapsed.has(catKey);
+      html+=`<div class="sb-sec"><div class="sb-lbl clickable" onclick="toggleCategory('${catKey.replace(/'/g,"\\'")}')"><span class="sb-chev">${isCollapsed?'▸':'▾'}</span>${esc(cat)}</div><div class="sb-list" style="${isCollapsed?'display:none':''}">`;
       assets.forEach(a=>{ const at=getAssetType(a.type); const sub=at.useKm?[a.year,a.plate].filter(Boolean).join(' · '):[a.model,a.loc].filter(Boolean).join(' · ')||at.name; const st=assetStatus(a); const dc=st==='due'?'d-due':st==='warn'?'d-warn':'d-ok'; const linkWarn=assetHasMissingLink(a)?'<span class="link-warn" title="Sin enlace al documento">⚠︎</span>':''; html+=`<button class="abt ${a.id===sel?'active':''}" onclick="selectAsset('${a.id}')"><div class="ab-ico">${at.emoji}</div><div class="ab-inf"><span class="abn">${esc(a.name)}${linkWarn}</span><span class="abs">${esc(sub)}</span></div><div class="sdot ${dc}"></div></button>`; });
       html+=`</div></div>`;
     });
