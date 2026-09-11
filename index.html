@@ -101,6 +101,8 @@
 
   /* SIDEBAR */
   .sidebar{background:var(--surface);border:1px solid var(--border-lt);border-radius:var(--r);box-shadow:var(--s1);overflow:hidden;position:sticky;top:76px}
+  .sb-group+.sb-group{border-top:2px solid var(--border);margin-top:4px}
+  .sb-group-lbl{font-size:12px;font-weight:800;color:var(--accent);padding:14px 12px 2px;letter-spacing:.2px}
   .sb-sec{padding:14px 12px 8px}
   .sb-sec+.sb-sec{border-top:1px solid var(--border-lt)}
   .sb-lbl{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--text-3);text-transform:uppercase;padding:0 8px;margin-bottom:4px}
@@ -229,6 +231,7 @@
   .at-tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700;margin-right:4px}
   .tag-km{background:#e8f0fd;color:#0051a8}
   .tag-loc{background:#e8f9f0;color:#1a6e33}
+  .tag-link{background:#F4EAD9;color:#8a5a24}
   .tag-builtin{background:var(--surface2);color:var(--text-4);border:1px solid var(--border-lt)}
   .at-add-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border:1.5px dashed var(--border);border-radius:var(--rs);color:var(--text-3);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;background:transparent;width:100%}
   .at-add-btn:hover{border-color:var(--accent);color:var(--accent);background:#F4EAD9}
@@ -394,6 +397,11 @@
         <div class="fg"><label class="fl">Año</label><input class="fi" id="f-year" type="number" placeholder="2022"></div>
         <div class="fg" id="c-plate" style="display:none"><label class="fl">Placa</label><input class="fi" id="f-plate" placeholder="AAA-1234"></div>
         <div class="fg" id="c-loc" style="display:none"><label class="fl">Ubicación</label><input class="fi" id="f-loc" placeholder="Sala, Piso 2..."></div>
+        <div class="fg" id="c-link" style="display:none">
+          <label class="fl">Enlace al Documento</label>
+          <input class="fi" id="f-link" type="url" placeholder="https://onedrive.live.com/...">
+          <div class="cfg-hint">Pega el enlace para compartir desde OneDrive u otro almacenamiento seguro</div>
+        </div>
       </div>
       <div class="fr" id="c-km" style="display:none">
         <div class="fg"><label class="fl">Kilometraje Actual</label><input class="fi" id="f-km" type="number" placeholder="85000"></div>
@@ -431,11 +439,13 @@
         <div class="emoji-grid" id="ate-emoji-grid"></div>
         <span class="fh">O escribe directamente: <input class="fi" id="ate-emoji-custom" placeholder="✏️" style="width:80px;display:inline-block;margin-left:6px;padding:4px 8px;font-size:18px"></span>
       </div>
+      <div class="fg"><label class="fl">Sección</label><select class="fs" id="ate-group"><option value="assets">Activos (con mantenimiento)</option><option value="due_dates">Documentos y Vencimientos</option></select><span class="fh">Separa el sidebar en dos bloques, para no mezclar vehículos/equipos con documentos y pólizas.</span></div>
       <div class="fg"><label class="fl">Categoría</label><input class="fi" id="ate-cat" placeholder="Ej: Electrodomésticos, Vehículos..."><span class="fh">Activos del mismo tipo se agrupan por categoría.</span></div>
       <div class="divider"></div>
       <div class="toggle-row"><div><div class="toggle-lbl">Usa Odómetro / Kilometraje</div><div class="toggle-sub">Para vehículos con kilometraje</div></div><label class="toggle"><input type="checkbox" id="ate-km"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
       <div class="toggle-row"><div><div class="toggle-lbl">Usa Placa de Identificación</div><div class="toggle-sub">Para vehículos con placa</div></div><label class="toggle"><input type="checkbox" id="ate-plate"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
       <div class="toggle-row"><div><div class="toggle-lbl">Usa Campo de Ubicación</div><div class="toggle-sub">Para equipos fijos (sala, cuarto...)</div></div><label class="toggle"><input type="checkbox" id="ate-loc"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
+      <div class="toggle-row"><div><div class="toggle-lbl">Usa Enlace a Documento</div><div class="toggle-sub">Link a OneDrive u otro almacenamiento — para documentos sensibles</div></div><label class="toggle"><input type="checkbox" id="ate-link"><div class="toggle-track"></div><div class="toggle-thumb"></div></label></div>
       <div class="divider"></div>
       <div class="dz" id="ate-dz" style="display:none"><span class="dzt">⚠ No se puede eliminar si tiene activos registrados.</span><button class="btn-del" onclick="deleteAssetType()">Eliminar</button></div>
     </div>
@@ -650,10 +660,10 @@ function getAssetType(typeId) {
 }
 
 // DB key mapping: JS camelCase ↔ Supabase snake_case
-function toDbAsset(a)   { return { id:a.id, name:a.name, type:a.type, model:a.model||null, year:a.year||null, plate:a.plate||null, loc:a.loc||null, km:a.km||null, km_date:a.kmDate||null, notes:a.notes||null, created_at:a.createdAt||new Date().toISOString() }; }
-function fromDbAsset(r) { return { id:r.id, name:r.name, type:r.type, model:r.model, year:r.year, plate:r.plate, loc:r.loc, km:r.km, kmDate:r.km_date, notes:r.notes, createdAt:r.created_at }; }
-function toDbAt(at)     { return { id:at.id, name:at.name, emoji:at.emoji, category:at.category, use_km:!!at.useKm, use_plate:!!at.usePlate, use_loc:!!at.useLoc, builtin:!!at.builtin, created_at:at.createdAt||new Date().toISOString() }; }
-function fromDbAt(r)    { return { id:r.id, name:r.name, emoji:r.emoji, category:r.category, useKm:r.use_km, usePlate:r.use_plate, useLoc:r.use_loc, builtin:r.builtin, createdAt:r.created_at }; }
+function toDbAsset(a)   { return { id:a.id, name:a.name, type:a.type, model:a.model||null, year:a.year||null, plate:a.plate||null, loc:a.loc||null, km:a.km||null, km_date:a.kmDate||null, notes:a.notes||null, doc_link:a.docLink||null, created_at:a.createdAt||new Date().toISOString() }; }
+function fromDbAsset(r) { return { id:r.id, name:r.name, type:r.type, model:r.model, year:r.year, plate:r.plate, loc:r.loc, km:r.km, kmDate:r.km_date, notes:r.notes, docLink:r.doc_link, createdAt:r.created_at }; }
+function toDbAt(at)     { return { id:at.id, name:at.name, emoji:at.emoji, category:at.category, group_name:at.groupName||'assets', use_km:!!at.useKm, use_plate:!!at.usePlate, use_loc:!!at.useLoc, use_link:!!at.useLink, builtin:!!at.builtin, created_at:at.createdAt||new Date().toISOString() }; }
+function fromDbAt(r)    { return { id:r.id, name:r.name, emoji:r.emoji, category:r.category, groupName:r.group_name||'assets', useKm:r.use_km, usePlate:r.use_plate, useLoc:r.use_loc, useLink:r.use_link, builtin:r.builtin, createdAt:r.created_at }; }
 function toDbSt(st)     { return { id:st.id, asset_id:st.assetId, name:st.name, trigger:st.trigger, km_interval:st.kmInterval||null, day_interval:st.dayInterval||null, notes:st.notes||null, created_at:st.createdAt||new Date().toISOString() }; }
 function fromDbSt(r)    { return { id:r.id, assetId:r.asset_id, name:r.name, trigger:r.trigger, kmInterval:r.km_interval, dayInterval:r.day_interval, notes:r.notes, createdAt:r.created_at }; }
 function toDbLog(l)     { return { id:l.id, asset_id:l.assetId, st_id:l.stId, date:l.date, km:l.km||null, cost:l.cost||null, workshop:l.workshop||l.ws||null, notes:l.notes||null, created_at:l.createdAt||new Date().toISOString() }; }
@@ -739,18 +749,30 @@ function renderSidebar() {
   const visibleAssets = !statusFilter ? db.assets
     : statusFilter==='due' ? db.assets.filter(a=>assetStatus(a)==='due')
     : db.assets.filter(a=>assetIsProximo(a));
-  const categories={};
-  visibleAssets.forEach(a=>{ const at=getAssetType(a.type); const c=at.category||'Otros'; if(!categories[c])categories[c]=[]; categories[c].push(a); });
+
+  const GROUP_ORDER=['assets','due_dates'];
+  const GROUP_LABELS={ assets:'Activos', due_dates:'Documentos y Vencimientos' };
+
   let html='';
   if(statusFilter){
     const label = statusFilter==='due' ? 'Vencidos' : 'Próximos 30 días';
     html+=`<div class="filter-bar"><span>Filtrando: ${label} (${visibleAssets.length})</span><span class="clr" onclick="filterByStatus('${statusFilter}')">✕ Ver todos</span></div>`;
   }
-  Object.entries(categories).forEach(([cat,assets])=>{
-    html+=`<div class="sb-sec"><div class="sb-lbl">${esc(cat)}</div><div class="sb-list">`;
-    assets.forEach(a=>{ const at=getAssetType(a.type); const sub=at.useKm?[a.year,a.plate].filter(Boolean).join(' · '):[a.model,a.loc].filter(Boolean).join(' · ')||at.name; const st=assetStatus(a); const dc=st==='due'?'d-due':st==='warn'?'d-warn':'d-ok'; html+=`<button class="abt ${a.id===sel?'active':''}" onclick="selectAsset('${a.id}')"><div class="ab-ico">${at.emoji}</div><div class="ab-inf"><span class="abn">${esc(a.name)}</span><span class="abs">${esc(sub)}</span></div><div class="sdot ${dc}"></div></button>`; });
-    html+=`</div></div>`;
+
+  GROUP_ORDER.forEach(groupKey=>{
+    const groupAssets=visibleAssets.filter(a=>{ const at=getAssetType(a.type); return (at.groupName||'assets')===groupKey; });
+    if(!groupAssets.length) return;
+    const categories={};
+    groupAssets.forEach(a=>{ const at=getAssetType(a.type); const c=at.category||'Otros'; if(!categories[c])categories[c]=[]; categories[c].push(a); });
+    html+=`<div class="sb-group"><div class="sb-group-lbl">${esc(GROUP_LABELS[groupKey])}</div>`;
+    Object.entries(categories).forEach(([cat,assets])=>{
+      html+=`<div class="sb-sec"><div class="sb-lbl">${esc(cat)}</div><div class="sb-list">`;
+      assets.forEach(a=>{ const at=getAssetType(a.type); const sub=at.useKm?[a.year,a.plate].filter(Boolean).join(' · '):[a.model,a.loc].filter(Boolean).join(' · ')||at.name; const st=assetStatus(a); const dc=st==='due'?'d-due':st==='warn'?'d-warn':'d-ok'; html+=`<button class="abt ${a.id===sel?'active':''}" onclick="selectAsset('${a.id}')"><div class="ab-ico">${at.emoji}</div><div class="ab-inf"><span class="abn">${esc(a.name)}</span><span class="abs">${esc(sub)}</span></div><div class="sdot ${dc}"></div></button>`; });
+      html+=`</div></div>`;
+    });
+    html+=`</div>`;
   });
+
   if(!db.assets.length) html=`<div class="sb-sec"><p style="font-size:12px;color:var(--text-3);line-height:1.7;padding:4px 8px">Sin activos aún.<br>Haz clic en <strong>Agregar Activo</strong>.</p></div>`;
   else if(!visibleAssets.length) html+=`<div class="sb-sec"><p style="font-size:12px;color:var(--text-3);line-height:1.7;padding:4px 8px">Ningún activo coincide con este filtro.</p></div>`;
   document.getElementById('sidebar').innerHTML=html;
@@ -786,7 +808,10 @@ function renderContent() {
   const alertsBody=alerts.length?alerts.join(''):`<div class="ep">Sin alertas próximas.</div>`;
   const odoH=at.useKm?`<div class="bg2"><div class="card"><div class="card-hdr"><div class="card-ttl">Odómetro</div></div><div class="odo-in"><div class="odo-disp" id="odo-display">${renderOdo(asset.km)}</div><div class="odo-row"><input class="odo-inp" id="odo-input" type="number" placeholder="Lectura actual..." value="${asset.km||''}"><button class="btn-upd" onclick="updateOdo()">Actualizar</button></div><div class="odo-note" id="odo-note">${asset.kmDate?`Última lectura · ${fmtDate(asset.kmDate)}`:'Sin lecturas previas'}</div></div></div><div class="card"><div class="card-hdr"><div class="card-ttl">Alertas Próximas</div></div>${alertsBody}</div></div>`:`<div class="card"><div class="card-hdr"><div class="card-ttl">Alertas Próximas</div></div>${alertsBody}</div>`;
   const histH=assetLogs.length?assetLogs.map((l,i)=>{ const st=db.serviceTypes.find(x=>x.id===l.stId); return`<div class="log-row"><div class="ldot ${i===0?'fresh':'old'}"></div><div class="ldate">${fmtDate(l.date)}</div><div class="lsvc">${esc(st?st.name:'Servicio')}</div><div class="lkm">${l.km?Number(l.km).toLocaleString('es')+' km':''}</div><div class="lmeta">${l.ws?`<span>${esc(l.ws)}</span>`:''}</div><div class="lcost">${l.cost?'$'+Number(l.cost).toFixed(2):''}</div><div class="lact"><button class="ico-btn" onclick="openLogModal(null,null,'${l.id}')" title="Editar">✎</button></div></div>`; }).join(''):`<div class="ep">Aún no hay servicios registrados.</div>`;
-  el.innerHTML=`<div class="card hero"><div class="hero-bg">${at.emoji}</div><div class="hero-in"><div class="hero-top"><div><div class="hero-name">${esc(asset.name)}</div><div class="hero-sub">${esc(subParts.join(' · ')||at.name)}</div></div><div class="hero-r">${badgeH}<button class="btn btn-gray btn-sm" onclick="openAssetModal('${asset.id}')">Editar</button></div></div><div class="hero-stats">${statsH}</div></div></div><div class="card"><div class="card-hdr"><div class="card-ttl">Programa de Mantenimiento</div><button class="btn-ghost" onclick="openServiceTypeModal('${asset.id}')">＋ Agregar servicio</button></div><div class="tbl-h"><div class="th">Servicio</div><div class="th">Intervalo</div><div class="th">Último</div><div class="th">Próximo</div><div class="th">Progreso</div><div class="th"></div></div>${tableH}</div>${odoH}<div class="card"><div class="card-hdr"><div class="card-ttl">Historial de Servicios</div><button class="btn-ghost" onclick="exportCSV('${asset.id}')">Exportar CSV</button></div>${histH}</div>`;
+  const docH = asset.docLink ? `<a href="${esc(asset.docLink)}" target="_blank" rel="noopener" class="btn btn-gray btn-sm">📄 Ver documento</a>` : '';
+  const progTtl = (at.groupName==='due_dates') ? 'Vencimientos' : 'Programa de Mantenimiento';
+  const addSvcTtl = (at.groupName==='due_dates') ? '＋ Agregar vencimiento' : '＋ Agregar servicio';
+  el.innerHTML=`<div class="card hero"><div class="hero-bg">${at.emoji}</div><div class="hero-in"><div class="hero-top"><div><div class="hero-name">${esc(asset.name)}</div><div class="hero-sub">${esc(subParts.join(' · ')||at.name)}</div></div><div class="hero-r">${badgeH}${docH}<button class="btn btn-gray btn-sm" onclick="openAssetModal('${asset.id}')">Editar</button></div></div><div class="hero-stats">${statsH}</div></div></div><div class="card"><div class="card-hdr"><div class="card-ttl">${progTtl}</div><button class="btn-ghost" onclick="openServiceTypeModal('${asset.id}')">${addSvcTtl}</button></div><div class="tbl-h"><div class="th">Servicio</div><div class="th">Intervalo</div><div class="th">Último</div><div class="th">Próximo</div><div class="th">Progreso</div><div class="th"></div></div>${tableH}</div>${odoH}<div class="card"><div class="card-hdr"><div class="card-ttl">Historial de Servicios</div><button class="btn-ghost" onclick="exportCSV('${asset.id}')">Exportar CSV</button></div>${histH}</div>`;
 }
 
 function renderOdo(km){ if(!km)return`<div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-sep">,</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-d" style="color:var(--text-4)">-</div><div class="odo-unit">KM</div>`; const s=String(Math.round(km)).padStart(6,'0'); return`<div class="odo-d">${s[0]}</div><div class="odo-d">${s[1]}</div><div class="odo-d">${s[2]}</div><div class="odo-sep">,</div><div class="odo-d">${s[3]}</div><div class="odo-d">${s[4]}</div><div class="odo-d">${s[5]}</div><div class="odo-unit">KM</div>`; }
@@ -824,15 +849,15 @@ function selectAsset(id){ sel=id; render(); }
 
 function openAssetModal(editId){
   clearAF(); populateTypeSelect('');
-  if(editId){ const a=db.assets.find(x=>x.id===editId); if(!a)return; document.getElementById('ma-ttl').textContent='Editar Activo'; document.getElementById('f-id').value=a.id; document.getElementById('f-name').value=a.name||''; document.getElementById('f-model').value=a.model||''; document.getElementById('f-year').value=a.year||''; document.getElementById('f-plate').value=a.plate||''; document.getElementById('f-loc').value=a.loc||''; document.getElementById('f-km').value=a.km||''; document.getElementById('f-km-date').value=a.kmDate||''; document.getElementById('f-notes').value=a.notes||''; populateTypeSelect(a.type); document.getElementById('danger-zone').style.display='flex'; onTypeChange(); }
+  if(editId){ const a=db.assets.find(x=>x.id===editId); if(!a)return; document.getElementById('ma-ttl').textContent='Editar Activo'; document.getElementById('f-id').value=a.id; document.getElementById('f-name').value=a.name||''; document.getElementById('f-model').value=a.model||''; document.getElementById('f-year').value=a.year||''; document.getElementById('f-plate').value=a.plate||''; document.getElementById('f-loc').value=a.loc||''; document.getElementById('f-km').value=a.km||''; document.getElementById('f-km-date').value=a.kmDate||''; document.getElementById('f-notes').value=a.notes||''; document.getElementById('f-link').value=a.docLink||''; populateTypeSelect(a.type); document.getElementById('danger-zone').style.display='flex'; onTypeChange(); }
   else{ document.getElementById('ma-ttl').textContent='Nuevo Activo'; document.getElementById('danger-zone').style.display='none'; document.getElementById('f-km-date').value=today(); }
   document.getElementById('asset-save-btn').dataset.label='Guardar';
   document.getElementById('modal-asset').classList.add('open');
 }
 
-function clearAF(){ ['f-id','f-name','f-model','f-year','f-plate','f-loc','f-km','f-km-date','f-notes'].forEach(i=>document.getElementById(i).value=''); onTypeChange(); }
+function clearAF(){ ['f-id','f-name','f-model','f-year','f-plate','f-loc','f-km','f-km-date','f-notes','f-link'].forEach(i=>document.getElementById(i).value=''); onTypeChange(); }
 
-function onTypeChange(){ const tid=document.getElementById('f-type').value; const at=tid?getAssetType(tid):null; document.getElementById('c-plate').style.display=(at&&at.usePlate)?'flex':'none'; document.getElementById('c-loc').style.display=(at&&at.useLoc)?'flex':'none'; document.getElementById('c-km').style.display=(at&&at.useKm)?'grid':'none'; }
+function onTypeChange(){ const tid=document.getElementById('f-type').value; const at=tid?getAssetType(tid):null; document.getElementById('c-plate').style.display=(at&&at.usePlate)?'flex':'none'; document.getElementById('c-loc').style.display=(at&&at.useLoc)?'flex':'none'; document.getElementById('c-km').style.display=(at&&at.useKm)?'grid':'none'; document.getElementById('c-link').style.display=(at&&at.useLink)?'flex':'none'; }
 
 async function saveAsset(){
   const name=document.getElementById('f-name').value.trim();
@@ -840,8 +865,9 @@ async function saveAsset(){
   if(!name){toast('⚠ El nombre es obligatorio');return;}
   if(!type){toast('⚠ Selecciona el tipo de activo');return;}
   const editId=document.getElementById('f-id').value;
-  const asset={ id:editId||uid(), name, type, model:document.getElementById('f-model').value.trim()||null, year:document.getElementById('f-year').value||null, plate:document.getElementById('f-plate').value.trim().toUpperCase()||null, loc:document.getElementById('f-loc').value.trim()||null, km:parseFloat(document.getElementById('f-km').value)||null, kmDate:document.getElementById('f-km-date').value||null, notes:document.getElementById('f-notes').value.trim()||null, createdAt:editId?(db.assets.find(a=>a.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString() };
+  const assetId=editId||uid();
   setBtn('asset-save-btn',true); setSyncStatus('syncing');
+  const asset={ id:assetId, name, type, model:document.getElementById('f-model').value.trim()||null, year:document.getElementById('f-year').value||null, plate:document.getElementById('f-plate').value.trim().toUpperCase()||null, loc:document.getElementById('f-loc').value.trim()||null, km:parseFloat(document.getElementById('f-km').value)||null, kmDate:document.getElementById('f-km-date').value||null, notes:document.getElementById('f-notes').value.trim()||null, docLink:document.getElementById('f-link').value.trim()||null, createdAt:editId?(db.assets.find(a=>a.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString() };
   try {
     if(editId){ await SB.update('assets', editId, toDbAsset(asset)); const i=db.assets.findIndex(a=>a.id===editId); if(i>-1)db.assets[i]=asset; toast('✓ Activo actualizado'); }
     else{ await SB.insert('assets', toDbAsset(asset)); db.assets.push(asset); sel=asset.id; toast('✓ Activo agregado'); }
@@ -875,7 +901,7 @@ function renderAssetTypesList(){
   let html='';
   Object.entries(cats).forEach(([cat,types])=>{
     html+=`<div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin:8px 0 4px">${esc(cat)}</div>`;
-    types.forEach(at=>{ const cnt=db.assets.filter(a=>a.type===at.id).length; html+=`<div class="at-row" onclick="openAssetTypeEdit('${at.id}')"><div class="at-emoji">${at.emoji}</div><div class="at-info"><div class="at-name">${esc(at.name)}</div><div class="at-meta">${at.useKm?'<span class="at-tag tag-km">📏 odómetro</span>':''}${at.useLoc?'<span class="at-tag tag-loc">📍 ubicación</span>':''}${at.builtin?'<span class="at-tag tag-builtin">predeterminado</span>':''}<span style="color:var(--text-4)">${cnt} activo${cnt!==1?'s':''}</span></div></div><span style="color:var(--text-4);font-size:16px">›</span></div>`; });
+    types.forEach(at=>{ const cnt=db.assets.filter(a=>a.type===at.id).length; html+=`<div class="at-row" onclick="openAssetTypeEdit('${at.id}')"><div class="at-emoji">${at.emoji}</div><div class="at-info"><div class="at-name">${esc(at.name)}</div><div class="at-meta">${at.useKm?'<span class="at-tag tag-km">📏 odómetro</span>':''}${at.useLoc?'<span class="at-tag tag-loc">📍 ubicación</span>':''}${at.useLink?'<span class="at-tag tag-link">🔗 enlace</span>':''}${at.builtin?'<span class="at-tag tag-builtin">predeterminado</span>':''}<span style="color:var(--text-4)">${cnt} activo${cnt!==1?'s':''}</span></div></div><span style="color:var(--text-4);font-size:16px">›</span></div>`; });
   });
   html+=`<button class="at-add-btn" onclick="openAssetTypeEdit(null)">＋ Nuevo Tipo de Activo</button>`;
   document.getElementById('at-list-body').innerHTML=html;
@@ -885,11 +911,11 @@ const EMOJI_OPTIONS=['🚗','🚙','🚕','🚌','🏎','🛻','🚐','🛵','�
 let atePickedEmoji='🔧';
 
 function openAssetTypeEdit(typeId){
-  document.getElementById('ate-id').value=''; document.getElementById('ate-name').value=''; document.getElementById('ate-cat').value=''; document.getElementById('ate-km').checked=false; document.getElementById('ate-plate').checked=false; document.getElementById('ate-loc').checked=false; document.getElementById('ate-emoji-custom').value=''; document.getElementById('ate-dz').style.display='none';
+  document.getElementById('ate-id').value=''; document.getElementById('ate-name').value=''; document.getElementById('ate-cat').value=''; document.getElementById('ate-group').value='assets'; document.getElementById('ate-km').checked=false; document.getElementById('ate-plate').checked=false; document.getElementById('ate-loc').checked=false; document.getElementById('ate-link').checked=false; document.getElementById('ate-emoji-custom').value=''; document.getElementById('ate-dz').style.display='none';
   atePickedEmoji='🔧';
   document.getElementById('ate-emoji-grid').innerHTML=EMOJI_OPTIONS.map(e=>`<button class="emoji-opt ${e===atePickedEmoji?'picked':''}" onclick="pickEmoji('${e}')">${e}</button>`).join('');
   updateEmojiPreview('🔧');
-  if(typeId){ const at=db.assetTypes.find(x=>x.id===typeId); if(!at)return; document.getElementById('ate-ttl').textContent='Editar Tipo de Activo'; document.getElementById('ate-id').value=at.id; document.getElementById('ate-name').value=at.name||''; document.getElementById('ate-cat').value=at.category||''; document.getElementById('ate-km').checked=!!at.useKm; document.getElementById('ate-plate').checked=!!at.usePlate; document.getElementById('ate-loc').checked=!!at.useLoc; atePickedEmoji=at.emoji||'🔧'; updateEmojiPreview(atePickedEmoji); refreshEmojiGrid(); if(!at.builtin) document.getElementById('ate-dz').style.display='flex'; }
+  if(typeId){ const at=db.assetTypes.find(x=>x.id===typeId); if(!at)return; document.getElementById('ate-ttl').textContent='Editar Tipo de Activo'; document.getElementById('ate-id').value=at.id; document.getElementById('ate-name').value=at.name||''; document.getElementById('ate-cat').value=at.category||''; document.getElementById('ate-group').value=at.groupName||'assets'; document.getElementById('ate-km').checked=!!at.useKm; document.getElementById('ate-plate').checked=!!at.usePlate; document.getElementById('ate-loc').checked=!!at.useLoc; document.getElementById('ate-link').checked=!!at.useLink; atePickedEmoji=at.emoji||'🔧'; updateEmojiPreview(atePickedEmoji); refreshEmojiGrid(); if(!at.builtin) document.getElementById('ate-dz').style.display='flex'; }
   else{ document.getElementById('ate-ttl').textContent='Nuevo Tipo de Activo'; }
   closeModal('modal-at-list'); document.getElementById('ate-save-btn').dataset.label='Guardar'; document.getElementById('modal-at-edit').classList.add('open');
 }
@@ -904,7 +930,7 @@ async function saveAssetType(){
   const cat=document.getElementById('ate-cat').value.trim()||'Otros';
   const emoji=document.getElementById('ate-emoji-custom').value.trim()||atePickedEmoji||'📦';
   const editId=document.getElementById('ate-id').value;
-  const at={ id:editId||uid(), name, emoji, category:cat, useKm:document.getElementById('ate-km').checked, usePlate:document.getElementById('ate-plate').checked, useLoc:document.getElementById('ate-loc').checked, builtin:editId?(db.assetTypes.find(x=>x.id===editId)?.builtin||false):false, createdAt:editId?(db.assetTypes.find(x=>x.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString() };
+  const at={ id:editId||uid(), name, emoji, category:cat, groupName:document.getElementById('ate-group').value, useKm:document.getElementById('ate-km').checked, usePlate:document.getElementById('ate-plate').checked, useLoc:document.getElementById('ate-loc').checked, useLink:document.getElementById('ate-link').checked, builtin:editId?(db.assetTypes.find(x=>x.id===editId)?.builtin||false):false, createdAt:editId?(db.assetTypes.find(x=>x.id===editId)?.createdAt||new Date().toISOString()):new Date().toISOString() };
   setBtn('ate-save-btn',true); setSyncStatus('syncing');
   try {
     if(editId){ await SB.update('asset_types',editId,toDbAt(at)); const i=db.assetTypes.findIndex(x=>x.id===editId); if(i>-1)db.assetTypes[i]=at; toast('✓ Tipo actualizado'); }
